@@ -1,0 +1,45 @@
+# Environments and secrets
+.env
+.env.local
+.venv/
+env/
+venv/
+ENV/
+
+# Python caches and bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.coverage
+htmlcov/
+*.egg-info/
+dist/
+build/
+
+# Databases and runtime stores
+*.db
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3
+backend/app/database/*.db
+backend/app/database/*.db-wal
+backend/app/database/*.db-shm
+
+# Frontend artifacts
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+
+# Generated runtime scratch and telemetry logs
+scratch/
+.system_generated/
+*.log
+
+# Vector store cache (keep manifest if desired, but index files are regenerated)
+# vector_store/*.faiss
+
+# OS specific
+.DS_Store
+Thumbs.db

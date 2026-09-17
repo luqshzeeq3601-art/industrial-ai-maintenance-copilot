@@ -1,0 +1,402 @@
+[
+  {
+    "id": "tc_01",
+    "query": "What does fault code E-402 mean and what is the root cause?",
+    "category": "retrieval",
+    "expected_fault_code": "E-402",
+    "expected_source": "cnc_lathe_manual.md",
+    "is_answerable": true
+  },
+  {
+    "id": "tc_02",
+    "query": "What are the troubleshooting steps for tool magazine indexing timeout E-501?",
+    "category": "retrieval",
+    "expected_fault_code": "E-501",
+    "expected_source": "cnc_lathe_manual.md",
+    "is_answerable": true
+  },
+  {
+    "id": "tc_03",
+    "query": "What hydraulic oil specification is required for TitanPress-3000?",
+    "category": "retrieval",
+    "expected_fault_code": null,
+    "expected_source": "hydraulic_press_manual.md",
+    "is_answerable": true
+  },
+  {
+    "id": "tc_04",
+    "query": "What is the procedure and safety lockout tagout for spindle bearing replacement?",
+    "category": "maintenance",
+    "expected_fault_code": null,
+    "expected_source": "sop_spindle_bearing_replacement.md",
+    "is_answerable": true
+  },
+  {
+    "id": "tc_05",
+    "query": "What is the recommended pre-charge pressure for nitrogen accumulators on the hydraulic press?",
+    "category": "retrieval",
+    "expected_fault_code": null,
+    "expected_source": "hydraulic_press_manual.md",
+    "is_answerable": true
+  },
+  {
+    "id": "tc_06",
+    "query": "What should I do if fault H-104 main hydraulic pump discharge pressure drop occurs?",
+    "category": "retrieval",
+    "expected_fault_code": "H-104",
+    "expected_source": "hydraulic_press_manual.md",
+    "is_answerable": true
+  },
+  {
+    "id": "tc_07",
+    "query": "Check recent maintenance failure history and status for machine EQ-1000",
+    "category": "diagnostic",
+    "expected_fault_code": null,
+    "expected_source": null,
+    "is_answerable": true
+  },
+  {
+    "id": "tc_08",
+    "query": "Who won the soccer world cup in 2022?",
+    "category": "abstention",
+    "expected_fault_code": null,
+    "expected_source": null,
+    "is_answerable": false
+  },
+  {
+    "id": "tc_09",
+    "query": "What is the current stock price of Apple and Tesla?",
+    "category": "abstention",
+    "expected_fault_code": null,
+    "expected_source": null,
+    "is_answerable": false
+  },
+  {
+    "id": "tc_10",
+    "query": "Write me a romantic poem about a CNC machine",
+    "category": "abstention",
+    "expected_fault_code": null,
+    "expected_source": null,
+    "is_answerable": false
+  },
+  {
+    "id": "tc_11",
+    "query": "What is the operating voltage and power rating of ApexMill-500?",
+    "category": "retrieval",
+    "expected_fault_code": null,
+    "expected_source": "cnc_lathe_manual.md",
+    "is_answerable": true
+  },
+  {
+    "id": "tc_12",
+    "query": "What does fault code E-210 Z-axis servo lag mean?",
+    "category": "retrieval",
+    "expected_fault_code": "E-210",
+    "expected_source": "cnc_lathe_manual.md",
+    "is_answerable": true
+  },
+  {
+    "id": "tc_13",
+    "query": "What type of guideway lubricant is specified for ApexMill-500?",
+    "category": "retrieval",
+    "expected_fault_code": null,
+    "expected_source": "cnc_lathe_manual.md",
+    "is_answerable": true
+  },
+  {
+    "id": "tc_14",
+    "query": "What is the maximum hydraulic system pressure on ApexMill-500?",
+    "category": "retrieval",
+    "expected_fault_code": null,
+    "expected_source": "cnc_lathe_manual.md",
+    "is_answerable": true
+  },
+  {
+    "id": "tc_15",
+    "query": "What is the clamping force rating of TitanPress-3000?",
+    "category": "retrieval",
+    "expected_fault_code": null,
+    "expected_source": "hydraulic_press_manual.md",
+    "is_answerable": true
+  },
+  {
+    "id": "tc_16",
+    "query": "What causes fault code H-208 proportional directional valve spool jam?",
+    "category": "retrieval",
+    "expected_fault_code": "H-208",
+    "expected_source": "hydraulic_press_manual.md",
+    "is_answerable": true
+  },
+  {
+    "id": "tc_17",
+    "query": "How often should hydraulic oil filter elements be replaced on TitanPress-3000?",
+    "category": "retrieval",
+    "expected_fault_code": null,
+    "expected_source": "hydraulic_press_manual.md",
+    "is_answerable": true
+  },
+  {
+    "id": "tc_18",
+    "query": "What is the permissible oil temperature range for the hydraulic press?",
+    "category": "retrieval",
+    "expected_fault_code": null,
+    "expected_source": "hydraulic_press_manual.md",
+    "is_answerable": true
+  },
+  {
+    "id": "tc_19",
+    "query": "What part numbers are specified for the spindle angular contact ball bearings?",
+    "category": "retrieval",
+    "expected_fault_code": null,
+    "expected_source": "sop_spindle_bearing_replacement.md",
+    "is_answerable": true
+  },
+  {
+    "id": "tc_20",
+    "query": "What is the maximum allowed spindle radial runout after bearing installation?",
+    "category": "retrieval",
+    "expected_fault_code": null,
+    "expected_source": "sop_spindle_bearing_replacement.md",
+    "is_answerable": true
+  },
+  {
+    "id": "tc_21",
+    "query": "What temperature should the induction bearing heater be set to during assembly?",
+    "category": "retrieval",
+    "expected_fault_code": null,
+    "expected_source": "sop_spindle_bearing_replacement.md",
+    "is_answerable": true
+  },
+  {
+    "id": "tc_22",
+    "query": "What tightening torque is required for the M45x1.5 spindle locknut?",
+    "category": "retrieval",
+    "expected_fault_code": null,
+    "expected_source": "sop_spindle_bearing_replacement.md",
+    "is_answerable": true
+  },
+  {
+    "id": "tc_23",
+    "query": "How long is the spindle run-in break-in procedure and at what speeds?",
+    "category": "maintenance",
+    "expected_fault_code": null,
+    "expected_source": "sop_spindle_bearing_replacement.md",
+    "is_answerable": true
+  },
+  {
+    "id": "tc_24",
+    "query": "What is the overhaul procedure for the Rexroth A4VSO axial piston pump?",
+    "category": "maintenance",
+    "expected_fault_code": null,
+    "expected_source": "sop_hydraulic_pump_maintenance.md",
+    "is_answerable": true
+  },
+  {
+    "id": "tc_25",
+    "query": "What is the maximum allowable clearance between piston shoes and swashplate?",
+    "category": "retrieval",
+    "expected_fault_code": null,
+    "expected_source": "sop_hydraulic_pump_maintenance.md",
+    "is_answerable": true
+  },
+  {
+    "id": "tc_26",
+    "query": "What should the case drain leakage rate of the hydraulic pump not exceed?",
+    "category": "retrieval",
+    "expected_fault_code": null,
+    "expected_source": "sop_hydraulic_pump_maintenance.md",
+    "is_answerable": true
+  },
+  {
+    "id": "tc_27",
+    "query": "What torque must be applied to the pump housing tie-bolts?",
+    "category": "retrieval",
+    "expected_fault_code": null,
+    "expected_source": "sop_hydraulic_pump_maintenance.md",
+    "is_answerable": true
+  },
+  {
+    "id": "tc_28",
+    "query": "Give me the step by step overhaul procedure for the main hydraulic pump",
+    "category": "maintenance",
+    "expected_fault_code": null,
+    "expected_source": "sop_hydraulic_pump_maintenance.md",
+    "is_answerable": true
+  },
+  {
+    "id": "tc_29",
+    "query": "What safety precautions must be followed when working on pressurized hydraulic circuits?",
+    "category": "maintenance",
+    "expected_fault_code": null,
+    "expected_source": "sop_hydraulic_pump_maintenance.md",
+    "is_answerable": true
+  },
+  {
+    "id": "tc_30",
+    "query": "Show past downtime logs and failure trends for EQ-1004",
+    "category": "diagnostic",
+    "expected_fault_code": null,
+    "expected_source": null,
+    "is_answerable": true
+  },
+  {
+    "id": "tc_31",
+    "query": "Investigate recurring issues for machine EQ-1002",
+    "category": "diagnostic",
+    "expected_fault_code": null,
+    "expected_source": null,
+    "is_answerable": true
+  },
+  {
+    "id": "tc_32",
+    "query": "What is the current health status and operating hours of EQ-1008?",
+    "category": "diagnostic",
+    "expected_fault_code": null,
+    "expected_source": null,
+    "is_answerable": true
+  },
+  {
+    "id": "tc_33",
+    "query": "Analyze repeat alarms and work orders on EQ-1005",
+    "category": "diagnostic",
+    "expected_fault_code": null,
+    "expected_source": null,
+    "is_answerable": true
+  },
+  {
+    "id": "tc_34",
+    "query": "Find the most frequent failure causes recorded for EQ-1001",
+    "category": "diagnostic",
+    "expected_fault_code": null,
+    "expected_source": null,
+    "is_answerable": true
+  },
+  {
+    "id": "tc_35",
+    "query": "Provide a repair workflow for spindle drive thermal overload",
+    "category": "maintenance",
+    "expected_fault_code": "E-402",
+    "expected_source": "cnc_lathe_manual.md",
+    "is_answerable": true
+  },
+  {
+    "id": "tc_36",
+    "query": "Give me the step-by-step LOTO and troubleshooting plan for hydraulic valve jam",
+    "category": "maintenance",
+    "expected_fault_code": "H-208",
+    "expected_source": "hydraulic_press_manual.md",
+    "is_answerable": true
+  },
+  {
+    "id": "tc_37",
+    "query": "What are the troubleshooting steps when Z-axis servo lag E-210 triggers?",
+    "category": "maintenance",
+    "expected_fault_code": "E-210",
+    "expected_source": "cnc_lathe_manual.md",
+    "is_answerable": true
+  },
+  {
+    "id": "tc_38",
+    "query": "How to resolve tool changer carousel timeout E-501 safely?",
+    "category": "maintenance",
+    "expected_fault_code": "E-501",
+    "expected_source": "cnc_lathe_manual.md",
+    "is_answerable": true
+  },
+  {
+    "id": "tc_39",
+    "query": "What is the weather forecast in Tokyo tomorrow?",
+    "category": "abstention",
+    "expected_fault_code": null,
+    "expected_source": null,
+    "is_answerable": false
+  },
+  {
+    "id": "tc_40",
+    "query": "Give me a recipe for chocolate chip cookies",
+    "category": "abstention",
+    "expected_fault_code": null,
+    "expected_source": null,
+    "is_answerable": false
+  },
+  {
+    "id": "tc_41",
+    "query": "What is the capital city of Australia?",
+    "category": "abstention",
+    "expected_fault_code": null,
+    "expected_source": null,
+    "is_answerable": false
+  },
+  {
+    "id": "tc_42",
+    "query": "Who is the CEO of Microsoft?",
+    "category": "abstention",
+    "expected_fault_code": null,
+    "expected_source": null,
+    "is_answerable": false
+  },
+  {
+    "id": "tc_43",
+    "query": "Can you trade cryptocurrency for me on Binance?",
+    "category": "abstention",
+    "expected_fault_code": null,
+    "expected_source": null,
+    "is_answerable": false
+  },
+  {
+    "id": "tc_44",
+    "query": "What is the plot of the latest Marvel movie?",
+    "category": "abstention",
+    "expected_fault_code": null,
+    "expected_source": null,
+    "is_answerable": false
+  },
+  {
+    "id": "tc_45",
+    "query": "Tell me a funny joke about engineers",
+    "category": "abstention",
+    "expected_fault_code": null,
+    "expected_source": null,
+    "is_answerable": false
+  },
+  {
+    "id": "tc_46",
+    "query": "What is the stock ticker symbol for Nvidia?",
+    "category": "abstention",
+    "expected_fault_code": null,
+    "expected_source": null,
+    "is_answerable": false
+  },
+  {
+    "id": "tc_47",
+    "query": "Translate this French sentence to English",
+    "category": "abstention",
+    "expected_fault_code": null,
+    "expected_source": null,
+    "is_answerable": false
+  },
+  {
+    "id": "tc_48",
+    "query": "Write python code to play Tic-Tac-Toe in terminal",
+    "category": "abstention",
+    "expected_fault_code": null,
+    "expected_source": null,
+    "is_answerable": false
+  },
+  {
+    "id": "tc_49",
+    "query": "What is the score of the NBA basketball finals game?",
+    "category": "abstention",
+    "expected_fault_code": null,
+    "expected_source": null,
+    "is_answerable": false
+  },
+  {
+    "id": "tc_50",
+    "query": "Check historical maintenance downtime for machine EQ-1009",
+    "category": "diagnostic",
+    "expected_fault_code": null,
+    "expected_source": null,
+    "is_answerable": true
+  }
+]

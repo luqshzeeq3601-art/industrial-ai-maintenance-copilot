@@ -1,0 +1,33 @@
+{
+  "audit_name": "Production-Gap Baseline Audit",
+  "timestamp": "2026-09-18T00:40:00Z",
+  "environment": {
+    "python_version": "3.10.11",
+    "os": "Windows 11",
+    "hardware": "Intel Core i7 / NVIDIA GeForce RTX 3070 (8GB VRAM)",
+    "local_llm": "Ollama qwen2.5:7b-instruct",
+    "embedding_model": "BAAI/bge-large-en-v1.5"
+  },
+  "verified_baseline_metrics": {
+    "pytest_tests_passed": 36,
+    "pytest_tests_failed": 0,
+    "guardrail_domain_accuracy_pct": 100.0,
+    "guardrail_abstention_precision_pct": 100.0,
+    "guardrail_abstention_recall_pct": 100.0,
+    "retrieval_recall_at_1_pct": 72.4,
+    "retrieval_recall_at_3_pct": 96.6,
+    "retrieval_recall_at_5_pct": 100.0,
+    "retrieval_mrr": 0.830,
+    "retrieval_latency_p50_ms": 233.8,
+    "retrieval_latency_p95_ms": 262.1
+  },
+  "database_baseline_counts": {
+    "equipment": 10,
+    "fault_codes": 18,
+    "maintenance_logs": 560,
+    "alarms": 4,
+    "work_orders": 5,
+    "scheduled_inspections": 3,
+    "users": 3
+  }
+}

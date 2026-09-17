@@ -1,0 +1,35 @@
+{
+  "benchmark": "Industrial AI Maintenance Copilot Baseline",
+  "timestamp": "2026-09-17T23:53:35Z",
+  "environment": {
+    "python_version": "3.10.11",
+    "os": "Windows",
+    "llm_model": "qwen2.5:7b",
+    "embedding_model": "BAAI/bge-large-en-v1.5",
+    "retrieval_method": "FAISS (Dense) + BM25 (Sparse Interleaved, fixed 0.85 score)"
+  },
+  "metrics": {
+    "total_test_cases": 50,
+    "guardrail_domain_correct": 49,
+    "guardrail_domain_total": 50,
+    "guardrail_domain_accuracy_pct": 98.0,
+    "guardrail_failures": [
+      {
+        "id": "tc_46",
+        "query": "What is the stock ticker symbol for Nvidia?",
+        "reason": "Substring matching failed"
+      }
+    ],
+    "rag_recall_at_3_hits": 27,
+    "rag_recall_at_3_total": 29,
+    "rag_recall_at_3_pct": 93.1,
+    "execution_time_seconds": 7.03
+  },
+  "test_suite_status": {
+    "total_tests": 13,
+    "passed": 12,
+    "failed": 1,
+    "failing_test": "backend/tests/test_agents.py::test_supervisor_abstention_guardrail"
+  },
+  "notes": "README claims of 100% Recall@3, 100% Routing, and 100% Abstention are unverified on baseline."
+}

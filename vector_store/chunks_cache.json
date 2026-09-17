@@ -1,0 +1,226 @@
+[
+  {
+    "id": 0,
+    "page_content": "# Industrial CNC Lathe & Milling Center (Model: ApexMill-500)\n## Technical Operation & Maintenance Manual (Doc Rev: 2.4)\n\n### 1. General Specifications\n- **Operating Voltage**: 400V AC, 3-Phase, 50/60Hz\n- **Spindle Power**: 15 kW\n- **Maximum Spindle Speed**: 12,000 RPM\n- **Hydraulic System Pressure**: 6.0 - 7.0 MPa\n- **Approved Lubrication**: Mobil Vactra Oil No. 2 (Slideways), Shell Tellus S2 MX 46 (Hydraulics)",
+    "metadata": {
+      "source": "cnc_lathe_manual.md",
+      "doc_type": "manual"
+    }
+  },
+  {
+    "id": 1,
+    "page_content": "### 2. Preventive Maintenance Schedule\n- **Daily**:\n  - Inspect coolant level in reservoir. Ensure refractometer reading indicates 7-9% emulsion concentration.\n  - Check pneumatic line air pressure regulator; nominal is 0.6 MPa (6.0 bar).\n  - Verify automatic slideway lubricator pressure and reservoir level.\n- **Weekly**:\n  - Clean chips and foreign debris from tool magazine changer arm and grippers.\n  - Inspect way covers for binding, scoring, or rubber wiper tear.\n- **Monthly**:\n  - Clean heat exchanger cooling fans on the electrical cabinet.\n  - Inspect spindle chiller fluid level and verify supply temperature is maintained at 20\u00b0C +/- 1\u00b0C.\n- **Quarterly (500 Operating Hours)**:",
+    "metadata": {
+      "source": "cnc_lathe_manual.md",
+      "doc_type": "manual"
+    }
+  },
+  {
+    "id": 2,
+    "page_content": "- **Quarterly (500 Operating Hours)**:\n  - Check axis ball screw backlash on X, Y, and Z axes. Max permissible backlash: 0.008 mm.\n  - Replace hydraulic return line filter element (Part No: HP-FLT-042).",
+    "metadata": {
+      "source": "cnc_lathe_manual.md",
+      "doc_type": "manual"
+    }
+  },
+  {
+    "id": 3,
+    "page_content": "### 3. Fault Diagnostic Codes & Corrective Actions",
+    "metadata": {
+      "source": "cnc_lathe_manual.md",
+      "doc_type": "manual"
+    }
+  },
+  {
+    "id": 4,
+    "page_content": "#### Fault Code E-402: Spindle Drive Thermal Overload\n- **Description**: Spindle drive motor thermistor detected winding temperature exceeding 115\u00b0C for >15 seconds.\n- **Root Causes**:\n  1. Spindle chiller unit circulation failure or coolant fluid degraded.\n  2. Severe cutting overload or dull carbide cutting inserts causing excessive load torque.\n  3. Spindle bearings beginning to seize due to grease breakdown.\n- **Troubleshooting Steps**:\n  1. Immediately halt cycle. Allow spindle to idle at 500 RPM for 10 minutes if not seized, otherwise power off immediately.\n  2. Inspect spindle chiller unit flowmeter: minimum required coolant flow rate is 6.5 L/min.",
+    "metadata": {
+      "source": "cnc_lathe_manual.md",
+      "doc_type": "manual"
+    }
+  },
+  {
+    "id": 5,
+    "page_content": "2. Inspect spindle chiller unit flowmeter: minimum required coolant flow rate is 6.5 L/min.\n  3. Verify spindle load meter on HMI panel during no-load rotation at 4,000 RPM (nominal is <12% load).\n  4. If load exceeds 25% at no load, check bearing preload and measure axial vibration. Replace spindle bearing set (SKF 7014-ACD/P4A).",
+    "metadata": {
+      "source": "cnc_lathe_manual.md",
+      "doc_type": "manual"
+    }
+  },
+  {
+    "id": 6,
+    "page_content": "#### Fault Code E-501: Tool Magazine Indexing Timeout\n- **Description**: Tool carrousel failed to complete pocket rotation within 4.5 seconds of command trigger.\n- **Root Causes**:\n  1. Mechanical jam caused by chips caught in geneva indexing mechanism.\n  2. Proximity sensor SQ14 gap exceeded (>2.5 mm) or sensor face fouled with oil/swarf.\n  3. Pneumatic actuator solenoid coil YV-08 burnt out or pilot pressure below 0.45 MPa.\n- **Troubleshooting Steps**:\n  1. Execute manual tool magazine reset (MDI mode: M88).\n  2. Check pneumatic gauge on tool arm cylinder; adjust regulator to 0.6 MPa.\n  3. Clean optical/inductive proximity sensors SQ14 and SQ15 using isopropyl alcohol.",
+    "metadata": {
+      "source": "cnc_lathe_manual.md",
+      "doc_type": "manual"
+    }
+  },
+  {
+    "id": 7,
+    "page_content": "#### Fault Code E-210: Axis Z Drive Error / Follow-up Error\n- **Description**: Difference between commanded position and optical linear scale feedback exceeded threshold (0.05 mm).\n- **Root Causes**:\n  1. Counterbalance cylinder pressure loss.\n  2. Z-axis mechanical brake failed to disengage.\n  3. Servo motor encoder cable shielding damaged or loose grounding clip.\n- **Troubleshooting Steps**:\n  1. Inspect Z-axis brake coil voltage (24V DC present when axis is enabled).\n  2. Check nitrogen accumulator pressure in pneumatic counterbalance (should read 4.2 MPa).",
+    "metadata": {
+      "source": "cnc_lathe_manual.md",
+      "doc_type": "manual"
+    }
+  },
+  {
+    "id": 8,
+    "page_content": "# Heavy Industrial Hydraulic Forging Press (Model: TitanPress-3000)\n## Operation, Hydraulics & Overhaul Manual (Doc Rev: 1.8)\n\n### 1. System Overview\n- **Nominal Tonnage**: 3,000 Metric Tons (30 MN)\n- **Main Ram Cylinder Bore**: 650 mm\n- **Operating Pressure**: Maximum Continuous: 25.0 MPa (250 bar), Peak: 28.0 MPa\n- **Main Pump Station**: Rexroth A4VSO Variable Displacement Axial Piston Pump (355 cc/rev)\n- **Hydraulic Reservoir Capacity**: 4,500 Liters\n- **Fluid Spec**: ISO VG 46 Anti-Wear Mineral Oil (Zinc-Free formulation required for silver-plated bushings)",
+    "metadata": {
+      "source": "hydraulic_press_manual.md",
+      "doc_type": "manual"
+    }
+  },
+  {
+    "id": 9,
+    "page_content": "### 2. Maintenance & Inspection Standards\n- **Daily Inspection**:\n  - Main cylinder rod seal inspection for weeping or extrusion. Maximum allowable leakage: 3 drops per 50 cycles.\n  - Check pump discharge oil temperature. Operating range: 45\u00b0C - 55\u00b0C. Trip shutoff threshold: 68\u00b0C.\n  - Inspect nitrogen pre-charge pressure on bladder accumulators (Nominal: 14.0 MPa).\n- **Monthly**:\n  - Extract oil sample from port MP-03 for particle count analysis (ISO 4406 target: 16/14/11 or cleaner).\n  - Check differential pressure indicator on high-pressure filter HF-101. Replace element when red pin pops up (>0.35 MPa delta-P).\n- **Annual Overhaul**:",
+    "metadata": {
+      "source": "hydraulic_press_manual.md",
+      "doc_type": "manual"
+    }
+  },
+  {
+    "id": 10,
+    "page_content": "- **Annual Overhaul**:\n  - Replace guide bushings and chevron V-packings on main ram.\n  - Flush pilot relief valves and recalibrate proportional pressure control card (Eurocard VT-5004).",
+    "metadata": {
+      "source": "hydraulic_press_manual.md",
+      "doc_type": "manual"
+    }
+  },
+  {
+    "id": 11,
+    "page_content": "### 3. Alarm Diagnostics & Root Cause Analysis",
+    "metadata": {
+      "source": "hydraulic_press_manual.md",
+      "doc_type": "manual"
+    }
+  },
+  {
+    "id": 12,
+    "page_content": "#### Fault Code H-104: Main Hydraulic Pump Discharge Pressure Drop\n- **Description**: Pressure sensor PT-01 fails to reach setpoint of 21.0 MPa within 3.2 seconds of ram prefill closure.\n- **Root Causes**:\n  1. Main prefill valve (poppet valve PV-01) sticking open due to contamination or broken return spring.\n  2. Suction strainer blocked, starving main pump and causing cavitation.\n  3. Proportional pressure relief valve DBDS-20 coil failure or loose electrical connector.\n- **Troubleshooting Steps**:\n  1. Verify pilot supply pressure at gauge G-02 (must exceed 4.0 MPa).\n  2. Check proportional valve current using multimeter: nominal command 0-800 mA.",
+    "metadata": {
+      "source": "hydraulic_press_manual.md",
+      "doc_type": "manual"
+    }
+  },
+  {
+    "id": 13,
+    "page_content": "2. Check proportional valve current using multimeter: nominal command 0-800 mA.\n  3. Inspect suction line butterfly valve - verify lock pin is in fully OPEN position.\n  4. Perform prefill valve leakage check: monitor return port during high-pressure holding phase.",
+    "metadata": {
+      "source": "hydraulic_press_manual.md",
+      "doc_type": "manual"
+    }
+  },
+  {
+    "id": 14,
+    "page_content": "#### Fault Code H-208: Excessive Fluid Temperature Trip (>68\u00b0C)\n- **Description**: Temperature transmitter TT-02 triggered emergency press inhibit.\n- **Root Causes**:\n  1. Plate heat exchanger PHE-01 cooling water supply stopped or thermostatic valve stuck closed.\n  2. High-pressure relief valve continuously bypassing oil due to incorrect zero-pressure unload command.\n  3. Internal pump slippage due to excessive cylinder barrel-to-port plate wear.\n- **Troubleshooting Steps**:\n  1. Inspect water flow sensor on shell/plate heat exchanger cooling circuit. Minimum flow: 120 L/min at 24\u00b0C inlet.",
+    "metadata": {
+      "source": "hydraulic_press_manual.md",
+      "doc_type": "manual"
+    }
+  },
+  {
+    "id": 15,
+    "page_content": "1. Inspect water flow sensor on shell/plate heat exchanger cooling circuit. Minimum flow: 120 L/min at 24\u00b0C inlet.\n  2. Touch relief valve return lines: any pipe hot to the touch during idle indicates a blowing relief valve.\n  3. Measure pump case drain flow (leakage line). Normal flow at 21 MPa is <18 L/min. Over 35 L/min requires pump rebuild.",
+    "metadata": {
+      "source": "hydraulic_press_manual.md",
+      "doc_type": "manual"
+    }
+  },
+  {
+    "id": 16,
+    "page_content": "# Standard Operating Procedure: Hydraulic Power Unit (HPU) Overhaul & Valve Servicing\n## SOP Reference: SOP-MNT-HYD-008 (Rev 2.1)\n**Applicable Equipment**: TitanPress-3000, Hydropress-1200, Extruder-E40\n**Department**: Fluid Power & Hydraulic Services\n\n### 1. Safety Procedures\n- Depressurize system completely. Verify high-pressure gauge reads 0 bar before loosening any fitting or flange.\n- Lock out electrical power to 160 kW main drive motor.\n- Place containment drip trays (min 200L capacity) beneath pump manifold.",
+    "metadata": {
+      "source": "sop_hydraulic_pump_maintenance.md",
+      "doc_type": "sop"
+    }
+  },
+  {
+    "id": 17,
+    "page_content": "### 2. Required Spares & Equipment\n- Proportional Valve Replacement Cartridge: Rexroth 4WRPEH 6-C\n- High-Pressure Filter Element: 3-micron absolute micro-glass (Part: Rexroth 2.0040 H3XL-A00-0-M)\n- Portable Fluid Transfer / Off-Line Filtration Cart (Target cleanliness: ISO 15/13/10)\n- Fluke 773 Process Milliamp Clamp Meter for 4-20mA valve loop diagnostics.",
+    "metadata": {
+      "source": "sop_hydraulic_pump_maintenance.md",
+      "doc_type": "sop"
+    }
+  },
+  {
+    "id": 18,
+    "page_content": "### 3. Execution Steps\n\n#### Step 1: Fluid Sampling & Pre-Check\n1. Connect sampling adapter to sample port MP-03.\n2. Run fluid cart for 5 minutes; extract 100 mL into clean particle sample bottle.\n3. Test with on-site laser particle counter. If NAS 1638 class is >7, activate polishing bypass filtration for 4 hours.\n\n#### Step 2: Main Pump Inspection & Swashplate Servo Adjustment\n1. Inspect swashplate cradle bearings for fretting through the inspection port.\n2. Measure case drain line temperature with infrared pyrometer (must be within 8\u00b0C of reservoir bulk temperature).\n3. Check pilot control pressure: adjust pilot pressure relief valve PRV-02 to 4.5 MPa +/- 0.2 MPa.",
+    "metadata": {
+      "source": "sop_hydraulic_pump_maintenance.md",
+      "doc_type": "sop"
+    }
+  },
+  {
+    "id": 19,
+    "page_content": "#### Step 3: High Pressure Filter Replacement\n1. Unscrew filter bowl using filter strap wrench.\n2. Inspect bottom of bowl for metallic slivers or bronze flakes (indicates pump piston shoe wear).\n3. Coat new O-ring seal with clean hydraulic oil; install filter element (torque bowl to 70 Nm).\n4. Reset red differential pressure pop-up visual indicator.",
+    "metadata": {
+      "source": "sop_hydraulic_pump_maintenance.md",
+      "doc_type": "sop"
+    }
+  },
+  {
+    "id": 20,
+    "page_content": "#### Step 4: System Air Bleeding & Recommissioning\n1. Open manual air bleed screws on highest point of main ram cylinder manifold.\n2. Jog main pump in 2-second bursts at 300 RPM until oil emerges from bleed ports without air bubbles or foaming.\n3. Tighten bleed screws to 25 Nm.\n4. Run press under no-load pressure cycle at 5 MPa for 15 minutes while monitoring sound level (<78 dBA at 1 meter).",
+    "metadata": {
+      "source": "sop_hydraulic_pump_maintenance.md",
+      "doc_type": "sop"
+    }
+  },
+  {
+    "id": 21,
+    "page_content": "# Standard Operating Procedure: High-Precision Spindle Bearing Replacement\n## SOP Reference: SOP-MNT-CNC-014 (Rev 3.0)\n**Applicable Equipment**: ApexMill-500, ApexMill-750, Lathe-X200\n**Department**: Mechanical Maintenance & Precision Tooling",
+    "metadata": {
+      "source": "sop_spindle_bearing_replacement.md",
+      "doc_type": "sop"
+    }
+  },
+  {
+    "id": 22,
+    "page_content": "### 1. Purpose & Safety Mandates\nThis procedure governs the step-by-step disassembly, inspection, re-bearing, and precision alignment of high-speed motorized machine tool spindles.\n\n> **CRITICAL SAFETY WARNING: Lockout / Tagout (LOTO)**\n> - Disconnect main 400V breaker and pad lock with personal maintenance tag.\n> - Verify zero electrical energy on bus bars with calibrated multimeter.\n> - Bleed residual pneumatic accumulator pressure via manual drain cock V-09.",
+    "metadata": {
+      "source": "sop_spindle_bearing_replacement.md",
+      "doc_type": "sop"
+    }
+  },
+  {
+    "id": 23,
+    "page_content": "### 2. Required Tools & Precision Instruments\n- Dial Indicator with magnetic base (0.001 mm / 1 micron graduation)\n- Induction Bearing Heater with demagnetizing cycle (e.g., SKF TIH 030M)\n- Torque wrench calibrated in range 5 - 50 Nm\n- Precision matched angular contact bearing set: **SKF 7014-ACD/P4ADGA** (Quadruplex DBB arrangement)\n- High-speed synthetic spindle grease: Kl\u00fcber Isoflex NBU 15 (Fill quantity: precisely 15% of bearing free volume)\n- Cleanroom lint-free wipes and reagent-grade pure isopropanol.",
+    "metadata": {
+      "source": "sop_spindle_bearing_replacement.md",
+      "doc_type": "sop"
+    }
+  },
+  {
+    "id": 24,
+    "page_content": "### 3. Step-by-Step Replacement Procedure\n\n#### Step 1: Spindle Cartridge Removal\n1. Drain spindle chiller glycol jacket into clean container.\n2. Label and disconnect encoder feedback cables, motor power leads, and thermistor connectors.\n3. Loosen spindle flange mounting bolts in cross-pattern (diagonal sequence).\n4. Install two M10 jack screws into threaded extraction holes on the housing face; tighten evenly to jack out spindle cartridge.",
+    "metadata": {
+      "source": "sop_spindle_bearing_replacement.md",
+      "doc_type": "sop"
+    }
+  },
+  {
+    "id": 25,
+    "page_content": "#### Step 2: Disassembly & Inspection\n1. Remove front labyrinth cover and bearing retention locknut (left-hand thread on model ApexMill-500).\n2. Carefully press shaft out from housing using arbor press with brass protective sleeve.\n3. Inspect shaft bearing journals with micrometer: taper and out-of-roundness must be within 0.002 mm.\n\n#### Step 3: New Bearing Preparation & Greasing\n1. Do not wash factory pre-cleaned bearings.\n2. Calculate grease charge: 1.8 grams per bearing of Kl\u00fcber Isoflex NBU 15 using a disposable medical syringe.\n3. Distribute grease evenly between rolling balls. Slowly rotate bearing ring by hand for 20 revolutions.",
+    "metadata": {
+      "source": "sop_spindle_bearing_replacement.md",
+      "doc_type": "sop"
+    }
+  },
+  {
+    "id": 26,
+    "page_content": "#### Step 4: Installation & Preload Setting\n1. Heat front bearing pair on induction heater to 80\u00b0C (never exceed 100\u00b0C).\n2. Slide bearings onto shaft against seating shoulder in designated back-to-back (DB) orientation.\n3. Apply precision retention locknut and torque to 35 Nm using calibrated spanner. Allow assembly to cool to ambient (22\u00b0C).\n4. Slide shaft assembly into chilled outer housing. Tighten labyrinth seal cover bolts to 12 Nm.",
+    "metadata": {
+      "source": "sop_spindle_bearing_replacement.md",
+      "doc_type": "sop"
+    }
+  },
+  {
+    "id": 27,
+    "page_content": "#### Step 5: Post-Installation Runout & Run-In Procedure\n1. Mount 1-micron dial test indicator against spindle internal taper (ISO 40 taper).\n2. Rotate spindle by hand: total radial runout (TIR) must not exceed **0.003 mm**.\n3. **Mandatory Step-Run-In Cycle**:\n   - 1,000 RPM for 30 minutes (Monitor temperature: Delta-T < 10\u00b0C).\n   - 3,000 RPM for 30 minutes.\n   - 6,000 RPM for 20 minutes.\n   - 12,000 RPM for 15 minutes.\n   If housing surface temperature rises above 55\u00b0C at any stage, abort run-in immediately and inspect preload spacer.",
+    "metadata": {
+      "source": "sop_spindle_bearing_replacement.md",
+      "doc_type": "sop"
+    }
+  }
+]
