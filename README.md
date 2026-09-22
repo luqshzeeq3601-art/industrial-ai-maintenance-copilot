@@ -14,7 +14,6 @@ An enterprise-grade, **Agentic AI Maintenance Assistant & Human-in-the-Loop Copi
 
 Runs **100% locally with zero external API costs** on consumer hardware (tested on Intel Core i7 / NVIDIA GeForce RTX 3070 8GB VRAM) using Ollama (`qwen2.5:7b-instruct`) and `BAAI/bge-large-en-v1.5`, or can seamlessly scale to managed **Azure OpenAI** in cloud environments.
 
-![Workspace overview: live diagnostic on ApexMill-500 with agent workflow trace, fleet rail, and asset header](docs/screenshots/01-workspace-overview.png)
 
 ---
 
@@ -29,7 +28,7 @@ Runs **100% locally with zero external API costs** on consumer hardware (tested 
 - [Repository Layout](#repository-layout)
 - [Quick Start](#quick-start)
 - [Configuration](#configuration)
-- [Test Credentials (Development Only)](#test-credentials-development-only)
+- [Local Development Accounts](#local-development-accounts)
 - [Verification & Tests](#verification--tests)
 - [Deployment](#deployment)
 - [What Is Deliberately NOT in This Repo](#what-is-deliberately-not-in-this-repo)
@@ -104,7 +103,6 @@ flowchart TD
     Stream --> UI[React 19 Dashboard + Supervisor Approval Cards]
 ```
 
-![Fleet analytics: availability, operating hours, andon board with live alarm states](docs/screenshots/03-dag-analytics.png)
 
 ---
 
@@ -132,7 +130,7 @@ sequenceDiagram
     UI->>UI: Render ActionApprovalCard (Action Paused, Pending Supervisor)
 
     Sup->>UI: Log In as Supervisor
-    UI->>API: POST /api/v1/auth/login (supervisor1 / SuperPass123!)
+    UI->>API: POST /api/v1/auth/login (supervisor1 / local seed credential)
     API-->>UI: HttpOnly JWT Cookie (Role: supervisor)
     Sup->>UI: Click "Approve & Execute"
     UI->>API: POST /api/v1/actions/ACT-9A8B/approve
@@ -143,9 +141,8 @@ sequenceDiagram
     UI->>UI: Update card to Approved with live confirmation
 ```
 
-> The login password shown above is a **development-only seed**. See [Test Credentials](#test-credentials-development-only).
+> The login uses a local development seed. Never reuse development credentials in shared or production environments.
 
-![Supervisor approval card in Pending Supervisor state for a critical work order](docs/screenshots/02-approval-card.png)
 
 ---
 
@@ -314,16 +311,16 @@ Kubernetes secrets (`deploy/k8s/base/secrets.yaml`) are **placeholder-only** (`C
 
 ---
 
-## Test Credentials (Development Only)
+## Local Development Accounts
 
 > [!WARNING]
-> These are **local dev seeds only** created by `scripts/seed_db.py` / migrations. Change or remove them in any shared or production environment. Technicians cannot approve actions; only `supervisor`/`admin` can.
+> These are **local dev seeds only** created by `scripts/seed_db.py` / migrations. Password values are intentionally not published here. Change or remove them in any shared or production environment. Technicians cannot approve actions; only `supervisor`/`admin` can.
 
-| Username | Password | Role | Privileges |
-| :--- | :--- | :---: | :--- |
-| `tech1` | `TechPass123!` | `technician` | Query chat, request work orders, initiate inspections |
-| `supervisor1` | `SupervisorPass123!` | `supervisor` | Authorize / reject pending work orders, alarms, inspections |
-| `admin1` | `AdminPass123!` | `admin` | Full plant registry access and system administration |
+| Username | Role | Privileges |
+| :--- | :---: | :--- |
+| `tech1` | `technician` | Query chat, request work orders, initiate inspections |
+| `supervisor1` | `supervisor` | Authorize / reject pending work orders, alarms, inspections |
+| `admin1` | `admin` | Full plant registry access and system administration |
 
 ---
 
