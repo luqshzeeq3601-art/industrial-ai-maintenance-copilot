@@ -1,9 +1,9 @@
 """Fault codes REST endpoints for API v1."""
 from fastapi import APIRouter, HTTPException
-from backend.app.database.repository import IndustrialRepository
+from backend.app.database.fault_code_repository import FaultCodeRepository
 
 router = APIRouter(prefix="/fault-codes", tags=["Fault Codes v1"])
-repo = IndustrialRepository()
+repo = FaultCodeRepository()
 
 @router.get("")
 def list_fault_codes():

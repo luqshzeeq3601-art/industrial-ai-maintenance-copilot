@@ -1,4 +1,4 @@
-"""Industrial AI Multi-Agent Maintenance Copilot API Gateway with Security, Telemetry, and RBAC."""
+"""Maintenance Copilot API Gateway with Security, Telemetry, and RBAC."""
 import json
 import logging
 import time
@@ -12,10 +12,10 @@ from pydantic import BaseModel, Field
 from langchain_core.messages import HumanMessage, AIMessage
 
 from backend.app.config import settings
-from backend.app.database.models import get_connection, init_db
-from backend.app.database.repository import IndustrialRepository
+from backend.app.database.models import init_db
 from backend.app.agents.graph import get_graph
 from backend.app.api.v1 import api_v1_router
+from backend.app.api.compat import router as compat_router
 from backend.app.auth.security import get_current_user_optional
 from backend.app.telemetry.logger import setup_telemetry_logger, sanitize_data
 from backend.app.telemetry.metrics import (
@@ -25,22 +25,25 @@ from backend.app.telemetry.metrics import (
     metrics_response
 )
 
+from backend.app.telemetry.tracer import init_tracer
+
 logger = setup_telemetry_logger("copilot-gateway")
-repo = IndustrialRepository()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """FastAPI Lifespan managing DB migrations and graph checkpointer startup/shutdown."""
-    logger.info("Initializing database migrations and vector store...")
+    """FastAPI Lifespan managing DB migrations, tracing, and graph checkpointer startup/shutdown."""
+    logger.info("Initializing OpenTelemetry tracer and database migrations...")
+    settings.validate_prod_secrets()
+    init_tracer()
     init_db()
     # Pre-compile multi-agent graph with persistent SQLite checkpointer
     get_graph()
-    logger.info("Industrial Maintenance Copilot initialized successfully.")
+    logger.info("Maintenance Copilot initialized successfully.")
     yield
-    logger.info("Industrial Maintenance Copilot shutting down.")
+    logger.info("Maintenance Copilot shutting down.")
 
 app = FastAPI(
-    title="Industrial AI Multi-Agent Maintenance Copilot",
+    title="Maintenance Copilot",
     description="Multi-agent industrial assistant powered by LangGraph, SQLite checkpointing, FAISS RRF, and Argon2 RBAC.",
     version="1.0.0",
     lifespan=lifespan
@@ -109,8 +112,9 @@ async def security_and_tracing_middleware(request: Request, call_next):
 
     return response
 
-# Mount API v1 Routers
+# Mount API v1 Routers + legacy compat (extracted P0-3)
 app.include_router(api_v1_router)
+app.include_router(compat_router)
 
 # Prometheus Metrics Scrape Endpoint
 @app.get("/metrics", tags=["Telemetry"])
@@ -294,118 +298,3 @@ async def chat_stream(payload: ChatRequest, request: Request):
             yield f"data: {json.dumps({'type': 'error', 'code': 'ERR_STREAM', 'request_id': request_id, 'message': 'Execution encountered an error.'})}\n\n"
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")
-
-# --- Backward-Compatibility REST Wrappers ---
-
-@app.get("/api/equipment", tags=["Compatibility"])
-def list_equipment_legacy():
-    """Legacy compatibility wrapper for equipment listing."""
-    return {"equipment": repo.get_all_equipment()}
-
-@app.get("/api/fault-codes", tags=["Compatibility"])
-def list_fault_codes_legacy():
-    """Legacy compatibility wrapper for fault codes."""
-    return {"fault_codes": repo.get_all_fault_codes()}
-
-@app.get("/api/equipment/{machine_id}/history", tags=["Compatibility"])
-def machine_history_legacy(machine_id: str):
-    """Legacy compatibility wrapper for machine history."""
-    logs = repo.get_maintenance_history(machine_id=machine_id, limit=10)
-    return {"machine_id": machine_id.upper(), "logs": logs}
-
-@app.get("/api/stats", tags=["Compatibility"])
-def system_stats():
-    """Return overview statistics for dashboard."""
-    conn = get_connection()
-    cur = conn.cursor()
-    cur.execute("SELECT count(*) FROM maintenance_logs")
-    log_count = cur.fetchone()[0]
-    cur.execute("SELECT count(*) FROM equipment")
-    eq_count = cur.fetchone()[0]
-    cur.execute("SELECT count(*) FROM alarms WHERE status = 'active'")
-    alarm_count = cur.fetchone()[0]
-    cur.execute("SELECT count(*) FROM work_orders WHERE status = 'pending'")
-    pending_wo_count = cur.fetchone()[0]
-    conn.close()
-
-    cache_path = settings.VECTOR_STORE_DIR / "chunks_cache.json"
-    chunk_count = 0
-    if cache_path.exists():
-        with open(cache_path, "r", encoding="utf-8") as f:
-            chunk_count = len(json.load(f))
-
-    return {
-        "equipment_count": eq_count,
-        "maintenance_logs_count": log_count,
-        "active_alarms_count": alarm_count,
-        "pending_work_orders_count": pending_wo_count,
-        "indexed_chunks": chunk_count,
-        "llm_model": settings.LLM_MODEL,
-        "embedding_model": settings.EMBEDDING_MODEL_NAME
-    }
-
-@app.get("/api/analytics/fleet-health", tags=["Compatibility"])
-def fleet_health_analytics():
-    """Aggregated status, criticality, and operating metrics across all fleet units."""
-    conn = get_connection()
-    cur = conn.cursor()
-
-    cur.execute("SELECT status, count(*) as count FROM equipment GROUP BY status")
-    status_distribution = {row["status"]: row["count"] for row in cur.fetchall()}
-
-    cur.execute("SELECT criticality, count(*) as count FROM equipment GROUP BY criticality")
-    criticality_distribution = {row["criticality"]: row["count"] for row in cur.fetchall()}
-
-    cur.execute("SELECT sum(operating_hours) as total, avg(operating_hours) as avg, count(*) as count FROM equipment")
-    stats_row = cur.fetchone()
-    total_hours = stats_row["total"] or 0
-    avg_hours = round(stats_row["avg"] or 0, 1)
-    total_units = stats_row["count"] or 0
-
-    cur.execute("SELECT sum(duration_mins) as total_downtime FROM maintenance_logs")
-    downtime_row = cur.fetchone()
-    total_downtime_mins = downtime_row["total_downtime"] or 0
-
-    conn.close()
-
-    operational_count = status_distribution.get("operational", 0)
-    uptime_pct = round((operational_count / total_units * 100), 1) if total_units > 0 else 0.0
-
-    return {
-        "total_units": total_units,
-        "uptime_percentage": uptime_pct,
-        "total_operating_hours": total_hours,
-        "avg_operating_hours": avg_hours,
-        "total_downtime_hours": round(total_downtime_mins / 60, 1),
-        "status_distribution": status_distribution,
-        "criticality_distribution": criticality_distribution
-    }
-
-@app.get("/api/analytics/fault-categories", tags=["Compatibility"])
-def fault_category_analytics():
-    """Fault code breakdown by category and severity."""
-    conn = get_connection()
-    cur = conn.cursor()
-
-    cur.execute("SELECT category, count(*) as count FROM fault_codes GROUP BY category")
-    category_counts = [dict(r) for r in cur.fetchall()]
-
-    cur.execute("SELECT severity, count(*) as count FROM fault_codes GROUP BY severity")
-    severity_counts = [dict(r) for r in cur.fetchall()]
-
-    cur.execute("""
-        SELECT f.category, count(m.id) as occurrences, sum(m.duration_mins) as total_downtime_mins
-        FROM maintenance_logs m
-        JOIN fault_codes f ON m.fault_code = f.code
-        GROUP BY f.category
-        ORDER BY occurrences DESC
-    """)
-    incident_breakdown = [dict(r) for r in cur.fetchall()]
-
-    conn.close()
-
-    return {
-        "fault_categories": category_counts,
-        "severity_distribution": severity_counts,
-        "incident_breakdown": incident_breakdown
-    }

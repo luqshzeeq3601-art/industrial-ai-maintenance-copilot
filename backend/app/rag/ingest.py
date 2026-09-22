@@ -3,16 +3,19 @@ import hashlib
 import json
 import logging
 import re
+import time
 from datetime import datetime
 from pathlib import Path
-from typing import List, Tuple, Dict, Any
+from typing import List, Tuple, Dict, Any, Optional
 import faiss
 import numpy as np
 from langchain_community.document_loaders import TextLoader, PyPDFLoader
-from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_core.documents import Document
 from backend.app.config import settings
-from backend.app.rag.embeddings import get_embeddings
+from backend.app.rag.embeddings import get_embeddings, get_model_revision
+from backend.app.rag.model_configs import get_model_config, apply_document_prompt
+from backend.app.rag.chunking import chunk_documents, METADATA_SCHEMA_VERSION, CHUNKING_RECIPES
+from backend.app.rag.metadata import doc_type_for_path
 
 logger = logging.getLogger("copilot.rag.ingest")
 
@@ -75,7 +78,10 @@ def load_documents(docs_dir: Path) -> Tuple[List[Document], List[Dict[str, str]]
                         break
 
                     d.metadata["source"] = file_path.name
-                    d.metadata["doc_type"] = "manual" if "manual" in str(file_path).lower() else "sop"
+                    d.metadata["doc_type"] = doc_type_for_path(file_path)
+                    # Preserve PDF page numbers (PyPDFLoader sets "page"); default 0 for text.
+                    if "page" not in d.metadata:
+                        d.metadata["page"] = 0
 
                 documents.extend(docs)
             except Exception as e:
@@ -83,10 +89,28 @@ def load_documents(docs_dir: Path) -> Tuple[List[Document], List[Dict[str, str]]
 
     return documents, quarantined
 
-def ingest_and_index() -> int:
-    """Load documents, chunk, embed, and store native FAISS index with SHA-256 manifest."""
-    logger.info(f"Loading technical documents from: {settings.DOCS_DIR}")
-    raw_docs, quarantined = load_documents(settings.DOCS_DIR)
+def ingest_and_index(
+    vector_store_dir: Optional[Path] = None,
+    docs_dir: Optional[Path] = None,
+    chunking_recipe: Optional[str] = None,
+    embedding_model: Optional[str] = None,
+) -> int:
+    """Load documents, chunk, embed, and store native FAISS index with SHA-256 manifest.
+
+    All parameters default to production settings. Experimental configurations
+    MUST pass an isolated vector_store_dir under scratch/ so the production
+    index is never overwritten until the promotion gate passes.
+    Returns chunk count. Timing breakdown is recorded in the manifest.
+    """
+    target_dir = Path(vector_store_dir) if vector_store_dir else settings.VECTOR_STORE_DIR
+    source_dir = Path(docs_dir) if docs_dir else settings.DOCS_DIR
+    recipe = chunking_recipe or settings.CHUNKING_RECIPE
+    model_name = embedding_model or settings.EMBEDDING_MODEL_NAME
+    if recipe not in CHUNKING_RECIPES:
+        raise ValueError(f"Unknown chunking recipe '{recipe}'")
+    t_ingest_start = time.perf_counter()
+    logger.info(f"Loading technical documents from: {source_dir}")
+    raw_docs, quarantined = load_documents(source_dir)
 
     if quarantined:
         logger.warning(f"Excluded {len(quarantined)} quarantined document(s) from knowledge base.")
@@ -95,32 +119,36 @@ def ingest_and_index() -> int:
         logger.warning("No documents found in docs_dir!")
         return 0
 
-    text_splitter = RecursiveCharacterTextSplitter(
-        chunk_size=700,
-        chunk_overlap=120,
-        separators=["\n### ", "\n#### ", "\n## ", "\n\n", "\n", " "]
-    )
-    chunks = text_splitter.split_documents(raw_docs)
-    logger.info(f"Created {len(chunks)} chunks from {len(raw_docs)} documents.")
+    chunks = chunk_documents(raw_docs, recipe=recipe)
+    logger.info(f"Created {len(chunks)} chunks from {len(raw_docs)} documents (recipe={recipe}).")
 
-    logger.info(f"Computing embeddings with {settings.EMBEDDING_MODEL_NAME}...")
-    embeddings = get_embeddings()
-    texts = [c.page_content for c in chunks]
-    vectors = np.array(embeddings.embed_documents(texts), dtype=np.float32)
+    logger.info(f"Computing embeddings with {model_name}...")
+    t_embed_start = time.perf_counter()
+    embeddings = get_embeddings(model_name)
+    # Embed the header-carrying embedding_text when present; fall back to page_content.
+    texts = [c.metadata.get("embedding_text", c.page_content) for c in chunks]
+    prompted = [apply_document_prompt(t, model_name) for t in texts]
+    t_load_end = time.perf_counter()
+    vectors = np.array(embeddings.embed_documents(prompted), dtype=np.float32)
+    t_embed_end = time.perf_counter()
 
     # Normalize L2 for inner product / cosine similarity
     faiss.normalize_L2(vectors)
     dim = vectors.shape[1]
+    expected = get_model_config(model_name).expected_dim
+    if expected and expected > 0 and dim != expected:
+        logger.warning(f"Embedding dim {dim} != expected {expected} for {model_name}")
     index = faiss.IndexFlatIP(dim)
     index.add(vectors)
+    t_index_end = time.perf_counter()
 
     # Save Native FAISS index (no pickle!)
-    settings.VECTOR_STORE_DIR.mkdir(parents=True, exist_ok=True)
-    index_file = settings.VECTOR_STORE_DIR / INDEX_FILE
+    target_dir.mkdir(parents=True, exist_ok=True)
+    index_file = target_dir / INDEX_FILE
     faiss.write_index(index, str(index_file))
 
     # Save chunks cache in clean JSON
-    cache_path = settings.VECTOR_STORE_DIR / CHUNKS_METADATA_FILE
+    cache_path = target_dir / CHUNKS_METADATA_FILE
     serialized_chunks = [
         {"id": i, "page_content": c.page_content, "metadata": c.metadata}
         for i, c in enumerate(chunks)
@@ -129,7 +157,7 @@ def ingest_and_index() -> int:
         json.dump(serialized_chunks, f, indent=2)
 
     # Delete obsolete index.pkl if it exists
-    legacy_pkl = settings.VECTOR_STORE_DIR / "faiss_index" / "index.pkl"
+    legacy_pkl = target_dir / "faiss_index" / "index.pkl"
     if legacy_pkl.exists():
         legacy_pkl.unlink()
 
@@ -141,11 +169,22 @@ def ingest_and_index() -> int:
         "chunks_sha256": calculate_sha256(cache_path),
         "total_chunks": len(chunks),
         "dimension": dim,
-        "embedding_model": settings.EMBEDDING_MODEL_NAME,
+        "embedding_model": model_name,
+        "embedding_revision": get_model_revision(model_name),
+        "chunking_recipe": recipe,
+        "chunking_recipe_detail": CHUNKING_RECIPES[recipe],
+        "metadata_schema_version": METADATA_SCHEMA_VERSION,
         "indexed_at": datetime.utcnow().isoformat(),
-        "quarantined_files": quarantined
+        "quarantined_files": quarantined,
+        "timing_seconds": {
+            "load_and_chunk": round(t_embed_start - t_ingest_start, 3),
+            "model_load_plus_embed_setup": round(t_load_end - t_embed_start, 3),
+            "document_embedding": round(t_embed_end - t_load_end, 3),
+            "index_build": round(t_index_end - t_embed_end, 3),
+            "total": round(t_index_end - t_ingest_start, 3),
+        },
     }
-    manifest_path = settings.VECTOR_STORE_DIR / MANIFEST_FILE
+    manifest_path = target_dir / MANIFEST_FILE
     with open(manifest_path, "w", encoding="utf-8") as f:
         json.dump(manifest, f, indent=2)
 

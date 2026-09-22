@@ -60,7 +60,7 @@ CREATE INDEX IF NOT EXISTS idx_logs_started ON maintenance_logs(started_at);
 """
 
 MIGRATION_V2_SQL = """
--- Active, acknowledged, and cleared equipment alarms
+-- Active and historical alarms
 CREATE TABLE IF NOT EXISTS alarms (
     alarm_id TEXT PRIMARY KEY,
     machine_id TEXT NOT NULL,
@@ -147,6 +147,47 @@ CREATE INDEX IF NOT EXISTS idx_audit_action ON action_audit(action_id);
 CREATE INDEX IF NOT EXISTS idx_audit_user ON action_audit(user_id);
 """
 
+MIGRATION_V3_SQL = """
+-- Normalized industrial telemetry events table
+CREATE TABLE IF NOT EXISTS telemetry_events (
+    event_id TEXT PRIMARY KEY,
+    machine_id TEXT NOT NULL,
+    event_type TEXT NOT NULL CHECK(event_type IN ('feeder_jam', 'thermal_spike', 'vibration_alert', 'equipment_fault')),
+    severity TEXT NOT NULL CHECK(severity IN ('low', 'medium', 'high', 'critical')),
+    observed_at TEXT NOT NULL,
+    fault_code TEXT,
+    value REAL,
+    unit TEXT,
+    message TEXT,
+    metadata_json TEXT,
+    transport TEXT NOT NULL DEFAULT 'rest',
+    ingested_at TEXT NOT NULL,
+    created_alarm_id TEXT,
+    FOREIGN KEY(machine_id) REFERENCES equipment(machine_id),
+    FOREIGN KEY(created_alarm_id) REFERENCES alarms(alarm_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_telemetry_machine ON telemetry_events(machine_id);
+CREATE INDEX IF NOT EXISTS idx_telemetry_type ON telemetry_events(event_type);
+CREATE INDEX IF NOT EXISTS idx_telemetry_time ON telemetry_events(observed_at);
+"""
+
+MIGRATION_V4_SQL = """
+-- Semiconductor and Electronics Manufacturing Assets
+INSERT OR IGNORE INTO equipment (machine_id, name, type, location, install_date, last_service, status, operating_hours, criticality) VALUES
+('EQ-2001', 'Yamaha-YSM20R', 'SMT Pick-and-Place', 'Cleanroom-Bay-A', '2023-01-15', '2026-08-10', 'operational', 12450, 'critical'),
+('EQ-2002', 'Heller-1809MK5', 'Reflow Soldering Oven', 'Cleanroom-Bay-A', '2023-02-01', '2026-08-14', 'operational', 11980, 'high'),
+('EQ-2003', 'KohYoung-Zenith2', '3D Automated Optical Inspection', 'Cleanroom-Bay-B', '2023-03-10', '2026-08-20', 'operational', 9850, 'high'),
+('EQ-2004', 'Camfil-CleanFan400', 'Cleanroom FFU Air Handler', 'Cleanroom-Plenum', '2022-11-20', '2026-07-25', 'operational', 24600, 'medium');
+
+-- Semiconductor Fault Codes
+INSERT OR IGNORE INTO fault_codes (code, description, category, typical_cause, recommended_action, severity) VALUES
+('S-101', 'Nozzle Pickup Vacuum Loss', 'pneumatic', 'Clogged suction nozzle or solenoid valve pressure drop', 'Clean nozzle orifice with solvent bath, verify 0.06MPa vacuum', 'high'),
+('S-204', 'Zone 4 Reflow Convection Temp Deviation', 'electrical', 'Thermocouple drift or heater element degradation', 'Recalibrate zone thermocouple and execute thermal profile sweep', 'high'),
+('S-305', 'AOI Coplanarity & Solder Bridge Anomaly', 'software', 'Excessive paste volume or PCB warpage during reflow', 'Inspect stencil aperture and review 3D height threshold', 'medium'),
+('S-402', 'HEPA Filter Differential Pressure High', 'mechanical', 'HEPA filter dust loading or pre-filter saturation', 'Inspect pre-filter resistance, replace primary HEPA module', 'medium');
+"""
+
 def run_migrations(conn: sqlite3.Connection):
     """Run pending SQLite migrations idempotently."""
     conn.execute("PRAGMA journal_mode=WAL;")
@@ -174,6 +215,24 @@ def run_migrations(conn: sqlite3.Connection):
                 (2, datetime.utcnow().isoformat(), "Alarms, work orders, inspections, users, and audit tables")
             )
             logger.info("Migration v2 applied successfully.")
+
+        if 3 not in applied:
+            logger.info("Applying migration v3 (telemetry events table)...")
+            conn.executescript(MIGRATION_V3_SQL)
+            conn.execute(
+                "INSERT INTO schema_migrations (version, applied_at, description) VALUES (?, ?, ?)",
+                (3, datetime.utcnow().isoformat(), "Telemetry events table for REST and MQTT connectivity")
+            )
+            logger.info("Migration v3 applied successfully.")
+
+        if 4 not in applied:
+            logger.info("Applying migration v4 (semiconductor domain equipment and fault codes)...")
+            conn.executescript(MIGRATION_V4_SQL)
+            conn.execute(
+                "INSERT INTO schema_migrations (version, applied_at, description) VALUES (?, ?, ?)",
+                (4, datetime.utcnow().isoformat(), "Semiconductor assets (EQ-2001 to EQ-2004) and fault codes (S-101 to S-402)")
+            )
+            logger.info("Migration v4 applied successfully.")
 
 def seed_initial_simulated_platform(conn: sqlite3.Connection):
     """Seed sample alarms, work orders, inspections, and default users without touching existing data."""
@@ -235,3 +294,9 @@ def seed_initial_simulated_platform(conn: sqlite3.Connection):
             inspections
         )
         logger.info(f"Seeded {len(inspections)} scheduled inspections.")
+
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
+    conn = sqlite3.connect(settings.DATABASE_PATH)
+    run_migrations(conn)
+    conn.close()

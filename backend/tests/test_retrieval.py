@@ -1,11 +1,15 @@
 """Evaluation tests for hybrid retrieval accuracy and latency."""
 import time
 import pytest
+
+pytestmark = pytest.mark.slow
 from backend.app.rag.retriever import get_retriever
 
 @pytest.fixture(scope="module")
 def retriever():
-    return get_retriever()
+    r = get_retriever()
+    r.retrieve("warmup", k=1)
+    return r
 
 def test_retrieval_cnc_fault_e402(retriever):
     start = time.time()

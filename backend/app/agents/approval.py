@@ -29,12 +29,12 @@ def execute_approved_mutation(action: Dict[str, Any], approver_id: str) -> Dict[
             assigned_to=args.get("assigned_to"),
             status="approved"
         )
-        service.repo.update_work_order_status(
+        service.work_orders.update_work_order_status(
             work_order_id=result["work_order_id"],
             status="approved",
             approved_by=approver_id
         )
-        service.repo.record_audit(
+        service.audit.record_audit(
             action_id=action_id,
             action_type=action_type,
             user_id=approver_id,
@@ -71,7 +71,7 @@ def execute_approved_mutation(action: Dict[str, Any], approver_id: str) -> Dict[
             created_by=requester,
             notes=args.get("notes")
         )
-        service.repo.record_audit(
+        service.audit.record_audit(
             action_id=action_id,
             action_type=action_type,
             user_id=approver_id,
@@ -111,7 +111,7 @@ def create_approval_node():
             "arguments": pending.get("arguments", {}),
             **pending.get("arguments", {})
         }
-        service.repo.record_audit(
+        service.audit.record_audit(
             action_id=action_id,
             action_type=pending["action_type"],
             user_id=pending.get("requester_id") or "unauthenticated",
@@ -150,7 +150,7 @@ def create_approval_node():
             # Technicians are NOT permitted to approve!
             if approver_role == "technician":
                 err_msg = f"Security Violation: User '{approver}' with role 'technician' is not authorized to approve actions."
-                service.repo.record_audit(
+                service.audit.record_audit(
                     action_id=action_id,
                     action_type=pending["action_type"],
                     user_id=approver,
@@ -172,7 +172,7 @@ def create_approval_node():
 
             try:
                 exec_result = execute_approved_mutation(pending, approver_id=approver)
-                service.repo.record_audit(
+                service.audit.record_audit(
                     action_id=action_id,
                     action_type=pending["action_type"],
                     user_id=approver,
@@ -212,7 +212,7 @@ def create_approval_node():
                 )
         else:
             # Action Rejected
-            service.repo.record_audit(
+            service.audit.record_audit(
                 action_id=action_id,
                 action_type=pending["action_type"],
                 user_id=approver,

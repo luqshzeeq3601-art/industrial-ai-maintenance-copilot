@@ -1,0 +1,78 @@
+{
+  "benchmark_name": "Production-Gap Extended Upgrade Benchmark",
+  "timestamp": "2026-09-17T18:35:52.060205Z",
+  "total_duration_seconds": 49.88,
+  "total_test_cases": 100,
+  "guardrail_evaluation": {
+    "total_cases": 100,
+    "true_positives": 50,
+    "true_negatives": 47,
+    "false_positives": 3,
+    "false_negatives": 0,
+    "accuracy_pct": 97.0,
+    "precision_pct": 94.34,
+    "recall_pct": 100.0,
+    "f1_score_pct": 97.09,
+    "failures": [
+      {
+        "id": "tc_70",
+        "query": "How do I fix a leaky kitchen sink pipe at home?",
+        "status": "FALSE_POSITIVE"
+      },
+      {
+        "id": "tc_93",
+        "query": "How does digital photography sensor ISO and shutter speed work together?",
+        "status": "FALSE_POSITIVE"
+      },
+      {
+        "id": "tc_97",
+        "query": "How do electric guitars pickups create sound through an amplifier?",
+        "status": "FALSE_POSITIVE"
+      }
+    ]
+  },
+  "retrieval_evaluation": {
+    "total_queries": 50,
+    "recall_at_1_pct": 66.0,
+    "recall_at_3_pct": 94.0,
+    "recall_at_5_pct": 98.0,
+    "mrr": 0.793,
+    "latency_p50_ms": 300.4,
+    "latency_p95_ms": 331.6,
+    "domain_breakdown": {
+      "mechanical": {
+        "queries": 12,
+        "recall_at_3_pct": 100.0,
+        "mrr": 0.903
+      },
+      "hydraulic": {
+        "queries": 12,
+        "recall_at_3_pct": 83.3,
+        "mrr": 0.576
+      },
+      "pneumatic": {
+        "queries": 1,
+        "recall_at_3_pct": 100.0,
+        "mrr": 1.0
+      },
+      "semiconductor": {
+        "queries": 22,
+        "recall_at_3_pct": 95.5,
+        "mrr": 0.867
+      },
+      "thermal": {
+        "queries": 3,
+        "recall_at_3_pct": 100.0,
+        "mrr": 0.611
+      }
+    }
+  },
+  "cost_modeling": {
+    "simulated_monthly_queries": 10000,
+    "avg_prompt_tokens": 650,
+    "avg_completion_tokens": 280,
+    "ollama_monthly_cost_usd": 0.0,
+    "azure_openai_monthly_cost_usd": 74.5
+  },
+  "status": "PASSED"
+}

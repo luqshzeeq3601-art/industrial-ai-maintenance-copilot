@@ -3,7 +3,7 @@ import sys
 import uuid
 import click
 from backend.app.database.models import init_db
-from backend.app.database.repository import IndustrialRepository
+from backend.app.database.user_audit_telemetry_repository import UserRepository
 from backend.app.auth.security import hash_password
 
 @click.group()
@@ -19,7 +19,7 @@ def cli():
 def create_user(username, password, full_name, role):
     """Create a new user with Argon2id hashed password."""
     init_db()
-    repo = IndustrialRepository()
+    repo = UserRepository()
     existing = repo.get_user_by_username(username)
     if existing:
         click.echo(f"Error: User '{username}' already exists.", err=True)
@@ -40,12 +40,8 @@ def create_user(username, password, full_name, role):
 def list_users():
     """List all registered users and roles."""
     init_db()
-    repo = IndustrialRepository()
-    conn = repo._get_conn()
-    cur = conn.cursor()
-    cur.execute("SELECT user_id, username, full_name, role, created_at FROM users ORDER BY created_at ASC")
-    rows = cur.fetchall()
-    conn.close()
+    repo = UserRepository()
+    rows = repo.list_users()
 
     click.echo(f"{'User ID':<15} {'Username':<15} {'Role':<12} {'Full Name':<25}")
     click.echo("-" * 70)

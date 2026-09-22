@@ -3,9 +3,9 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "industrial-copilot"
+name = "maintenance-copilot"
 version = "0.1.0"
-description = "Industrial AI Multi-Agent Maintenance Copilot"
+description = "Maintenance Copilot"
 requires-python = ">=3.10,<3.13"
 dependencies = [
     "fastapi>=0.115.0",
@@ -47,3 +47,15 @@ dependencies = [
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["backend*"]
+
+[tool.pytest.ini_options]
+testpaths = ["backend/tests"]
+norecursedirs = ["scratch", ".venv", "node_modules", "dist", ".git", "__pycache__"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+asyncio_mode = "auto"
+markers = [
+    "slow: embedding/HF download or full-benchmark tests (>20s)",
+    "integration: needs postgres/mqtt/docker",
+]

@@ -2,12 +2,12 @@
 from typing import Literal
 from pydantic import BaseModel, Field
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
-from langchain_ollama import ChatOllama
 from langgraph.types import Command
 from langgraph.graph import END
 from backend.app.config import settings
 from backend.app.agents.state import AgentState
 from backend.app.guardrails.abstention import check_query_domain
+from backend.app.llm.factory import get_chat_model
 
 class SupervisorDecision(BaseModel):
     next_agent: Literal["retrieval", "diagnostic", "maintenance", "FINISH"] = Field(
@@ -31,11 +31,7 @@ Routing Rules:
 """
 
 def create_supervisor_node():
-    llm = ChatOllama(
-        model=settings.LLM_MODEL,
-        base_url=settings.OLLAMA_BASE_URL,
-        temperature=0.0
-    )
+    llm = get_chat_model(temperature=0.0)
 
     def supervisor_node(state: AgentState) -> Command:
         messages = state["messages"]

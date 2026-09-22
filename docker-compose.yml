@@ -57,5 +57,60 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
+  # --- Optional Profile: MQTT Broker ---
+  mosquitto:
+    image: eclipse-mosquitto:2.0
+    container_name: copilot-mqtt-broker
+    profiles: ["mqtt", "all"]
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    restart: unless-stopped
+
+  # --- Optional Profile: Observability Stack ---
+  prometheus:
+    image: prom/prometheus:v2.54.0
+    container_name: copilot-prometheus
+    profiles: ["observability", "all"]
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./docker/prometheus/alert_rules.yml:/etc/prometheus/alert_rules.yml:ro
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:11.2.0
+    container_name: copilot-grafana
+    profiles: ["observability", "all"]
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:?set GRAFANA_ADMIN_PASSWORD in .env}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - ./docker/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./docker/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+
+  # --- Optional Profile: PostgreSQL Dual-Persistence ---
+  postgres:
+    image: postgres:16-alpine
+    container_name: copilot-postgres
+    profiles: ["postgres", "all"]
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB:-industrial_maintenance}
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
 volumes:
   ollama_models:
+  postgres_data:

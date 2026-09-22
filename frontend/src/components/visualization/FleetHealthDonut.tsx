@@ -75,17 +75,17 @@ export function FleetHealthDonut({
   let accumulatedPercent = 0;
 
   return (
-    <div className="bg-[#FFFFFF] border border-[#EAEAEA] rounded-md p-4 shadow-[0_1px_2px_rgba(0,0,0,0.02)] flex flex-col justify-between">
+    <div className="h-full bg-[#FFFFFF] border border-[#EAEAEA] rounded-[var(--radius-outer)] p-5 shadow-[var(--shadow-tinted-sm)] flex flex-col justify-between">
       {/* Header */}
       <div className="flex items-center justify-between border-b border-[#EAEAEA] pb-2.5 mb-4">
         <div className="flex items-center gap-2">
-          <Activity className="w-4 h-4 text-[#111111]" strokeWidth={2.2} />
-          <h3 className="font-semibold text-xs uppercase tracking-wider text-[#111111]">
-            Fleet Health & Uptime
+          <Activity className="w-4 h-4 text-[#64748B]" strokeWidth={2.2} />
+          <h3 className="text-[10.5px] uppercase tracking-[0.08em] font-semibold font-mono text-[#64748B]">
+            Health record — fleet & uptime
           </h3>
         </div>
-        <span className="text-[11px] font-mono text-[#787774]">
-          Live Plant Status
+        <span className="text-[11px] font-mono tabular-nums text-[#787774]">
+          Live plant status
         </span>
       </div>
 

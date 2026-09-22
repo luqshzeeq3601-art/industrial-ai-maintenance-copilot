@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: copilot-config
+  namespace: industrial-copilot
+data:
+  APP_ENV: "production"
+  LOG_LEVEL: "INFO"
+  ENABLE_METRICS: "true"
+  PERSISTENCE_BACKEND: "postgres"
+  LLM_PROVIDER: "ollama"
+  OLLAMA_MODEL: "llama3.1:8b"
+  OLLAMA_BASE_URL: "http://ollama-service:11434"
+  EMBEDDING_MODEL: "sentence-transformers/all-MiniLM-L6-v2"
+  MQTT_BROKER_HOST: "mosquitto-service"
+  MQTT_BROKER_PORT: "1883"
+  MQTT_TOPIC_TELEMETRY: "factory/equipment/+/telemetry"
+  MQTT_TOPIC_ALARMS: "factory/equipment/+/alarms"
+  ENABLE_HMAC_AUTH: "true"
+  HMAC_TIMESTAMP_TOLERANCE_SECONDS: "300"
+  ENABLE_OTEL: "true"
+  OTEL_EXPORTER_OTLP_ENDPOINT: "http://otel-collector:4317"

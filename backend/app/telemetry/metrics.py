@@ -23,6 +23,13 @@ AGENT_INVOCATIONS_TOTAL = Counter(
     ["agent"]
 )
 
+AGENT_STEP_DURATION_SECONDS = Histogram(
+    "copilot_agent_step_duration_seconds",
+    "Specialist agent execution duration in seconds",
+    ["agent"],
+    buckets=[0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0]
+)
+
 TOOL_EXECUTIONS_TOTAL = Counter(
     "copilot_tool_executions_total",
     "Total tool calls by name and status",
@@ -39,6 +46,33 @@ ABSTENTION_EVENTS_TOTAL = Counter(
     "copilot_abstention_events_total",
     "Abstention guardrail triggers",
     ["reason"]
+)
+
+# Machine Telemetry and Ingestion
+TELEMETRY_EVENTS_INGESTED_TOTAL = Counter(
+    "copilot_telemetry_events_total",
+    "Total telemetry events ingested",
+    ["transport", "status"]
+)
+
+ALARMS_GENERATED_TOTAL = Counter(
+    "copilot_alarms_generated_total",
+    "Total automated alarms generated",
+    ["severity", "code"]
+)
+
+# LLM Provider & Token Telemetry
+LLM_TOKEN_USAGE_TOTAL = Counter(
+    "copilot_llm_tokens_total",
+    "Total LLM tokens consumed",
+    ["provider", "model", "token_type"]
+)
+
+LLM_INFERENCE_DURATION_SECONDS = Histogram(
+    "copilot_llm_inference_duration_seconds",
+    "LLM inference latency distribution in seconds",
+    ["provider", "model"],
+    buckets=[0.1, 0.25, 0.5, 1.0, 2.0, 5.0, 10.0, 20.0]
 )
 
 def metrics_response() -> Response:

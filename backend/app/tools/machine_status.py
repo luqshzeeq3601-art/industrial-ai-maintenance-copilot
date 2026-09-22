@@ -1,10 +1,12 @@
 """Equipment status and active alarms lookup tools."""
 from typing import Optional
 from langchain_core.tools import tool
-from backend.app.database.repository import IndustrialRepository
+from backend.app.database.equipment_repository import EquipmentRepository
+from backend.app.database.alarm_repository import AlarmRepository
 from backend.app.tools.schemas import MachineStatusInput, ActiveAlarmsInput
 
-repo = IndustrialRepository()
+equipment_repo = EquipmentRepository()
+alarm_repo = AlarmRepository()
 
 @tool(args_schema=MachineStatusInput)
 def get_machine_status(machine_id: str) -> str:
@@ -13,11 +15,11 @@ def get_machine_status(machine_id: str) -> str:
     Args:
         machine_id: Equipment identifier (e.g. 'EQ-1000' for ApexMill-500, 'EQ-1004' for TitanPress-3000).
     """
-    row = repo.get_equipment_by_id(machine_id)
+    row = equipment_repo.get_equipment_by_id(machine_id)
     if not row:
         return f"Equipment with ID '{machine_id}' was not found in plant asset registry."
 
-    active_alarms = repo.get_alarms(machine_id=machine_id, status="active")
+    active_alarms = alarm_repo.get_alarms(machine_id=machine_id, status="active")
     alarms_str = f"{len(active_alarms)} active alarm(s)" if active_alarms else "None (Normal)"
 
     return (
@@ -40,7 +42,7 @@ def get_active_alarms(machine_id: Optional[str] = None) -> str:
     Args:
         machine_id: Optional equipment identifier (e.g. 'EQ-1000').
     """
-    alarms = repo.get_alarms(machine_id=machine_id, status="active")
+    alarms = alarm_repo.get_alarms(machine_id=machine_id, status="active")
     if not alarms:
         target = f"for machine {machine_id}" if machine_id else "across the plant"
         return f"No active alarms found {target}."

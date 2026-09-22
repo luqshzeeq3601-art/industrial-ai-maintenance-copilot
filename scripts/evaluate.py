@@ -10,70 +10,14 @@ from typing import List, Dict, Any
 import numpy as np
 
 from backend.app.rag.retriever import HybridIndustrialRetriever, get_retriever
+from backend.app.eval.harness import evaluate_retrieval_configuration, evaluate_retrieval
 from backend.app.guardrails.abstention import check_query_domain, evaluate_evidence
 
 REPORTS_DIR = Path("reports")
 REPORTS_DIR.mkdir(parents=True, exist_ok=True)
 
-def evaluate_retrieval_configuration(
-    retriever: HybridIndustrialRetriever,
-    dataset: List[Dict[str, Any]],
-    config_name: str
-) -> Dict[str, Any]:
-    """Benchmark a single retrieval configuration across the dataset."""
-    latencies = []
-    r1_hits = 0
-    r3_hits = 0
-    r5_hits = 0
-    rr_scores = []
-    total_queries = 0
+__all__ = ["evaluate_retrieval_configuration", "evaluate_retrieval", "run_evaluation"]
 
-    for item in dataset:
-        expected_source = item.get("expected_source")
-        if not expected_source:
-            continue
-
-        total_queries += 1
-        query = item["query"]
-
-        t0 = time.time()
-        results = retriever.retrieve(query, k=5)
-        duration = time.time() - t0
-        latencies.append(duration)
-
-        sources = [r.get("source") for r in results]
-
-        if len(sources) > 0 and expected_source == sources[0]:
-            r1_hits += 1
-        if expected_source in sources[:3]:
-            r3_hits += 1
-        if expected_source in sources[:5]:
-            r5_hits += 1
-
-        if expected_source in sources:
-            rank = sources.index(expected_source) + 1
-            rr_scores.append(1.0 / rank)
-        else:
-            rr_scores.append(0.0)
-
-    r1_pct = round((r1_hits / total_queries) * 100, 1) if total_queries else 0.0
-    r3_pct = round((r3_hits / total_queries) * 100, 1) if total_queries else 0.0
-    r5_pct = round((r5_hits / total_queries) * 100, 1) if total_queries else 0.0
-    mrr = round(float(np.mean(rr_scores)), 3) if rr_scores else 0.0
-
-    p50_ms = round(float(np.percentile(latencies, 50)) * 1000, 1) if latencies else 0.0
-    p95_ms = round(float(np.percentile(latencies, 95)) * 1000, 1) if latencies else 0.0
-
-    return {
-        "configuration": config_name,
-        "total_queries": total_queries,
-        "recall_at_1_pct": r1_pct,
-        "recall_at_3_pct": r3_pct,
-        "recall_at_5_pct": r5_pct,
-        "mrr": mrr,
-        "latency_p50_ms": p50_ms,
-        "latency_p95_ms": p95_ms
-    }
 
 def run_evaluation():
     dataset_path = Path("backend/tests/eval_dataset.json")

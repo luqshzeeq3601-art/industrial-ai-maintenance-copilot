@@ -3,7 +3,6 @@ import logging
 import re
 import uuid
 from langchain_core.messages import HumanMessage, AIMessage
-from langchain_ollama import ChatOllama
 from langgraph.prebuilt import create_react_agent
 from langgraph.types import Command
 from backend.app.config import settings
@@ -11,6 +10,7 @@ from backend.app.agents.state import AgentState
 from backend.app.services.equipment_service import EquipmentService
 from backend.app.tools.query_db import query_maintenance_history, query_fault_code
 from backend.app.tools.machine_status import get_machine_status, get_active_alarms
+from backend.app.llm.factory import get_chat_model
 
 logger = logging.getLogger("copilot.agents.diagnostic")
 service = EquipmentService()
@@ -28,9 +28,7 @@ Your responsibility:
 """
 
 def create_diagnostic_node():
-    llm = ChatOllama(
-        model=settings.LLM_MODEL,
-        base_url=settings.OLLAMA_BASE_URL,
+    llm = get_chat_model(
         temperature=settings.LLM_TEMPERATURE,
         num_ctx=settings.LLM_CONTEXT_WINDOW
     )
@@ -68,7 +66,7 @@ def create_diagnostic_node():
                 )
 
             # Validate alarm existence
-            alarm = service.repo.get_alarm_by_id(alarm_id)
+            alarm = service.alarms.get_alarm_by_id(alarm_id)
             if not alarm:
                 return Command(
                     goto="supervisor",

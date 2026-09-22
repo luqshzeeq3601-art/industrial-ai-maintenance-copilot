@@ -40,13 +40,13 @@ export function OperatingHoursBarChart({
   };
 
   return (
-    <div className="bg-[#FFFFFF] border border-[#EAEAEA] rounded-md p-4 shadow-[0_1px_2px_rgba(0,0,0,0.02)] flex flex-col justify-between">
+    <div className="bg-[#FFFFFF] border border-[#EAEAEA] rounded-[var(--radius-outer)] p-5 shadow-[var(--shadow-tinted-sm)] flex flex-col justify-between">
       {/* Header */}
       <div className="flex items-center justify-between border-b border-[#EAEAEA] pb-2.5 mb-3">
         <div className="flex items-center gap-2">
-          <HardDrive className="w-4 h-4 text-[#111111]" strokeWidth={2.2} />
-          <h3 className="font-semibold text-xs uppercase tracking-wider text-[#111111]">
-            Operating Hours & Wear Index
+          <HardDrive className="w-4 h-4 text-[#64748B]" strokeWidth={2.2} />
+          <h3 className="text-[10.5px] uppercase tracking-[0.08em] font-semibold font-mono text-[#64748B]">
+            Hours ledger — operating hours & wear
           </h3>
         </div>
         <div className="flex items-center gap-2 text-[10.5px] font-mono text-[#787774]">
@@ -110,7 +110,7 @@ export function OperatingHoursBarChart({
 
                 <div className="flex items-center gap-2">
                   <span
-                    className={`px-1.5 py-0.2 rounded text-[10px] uppercase font-mono font-medium border ${critBadge.bg} ${critBadge.text} ${critBadge.border}`}
+                    className={`px-1.5 py-0.5 rounded-[4px] text-[10px] uppercase tracking-[0.06em] font-semibold font-mono border ${critBadge.bg} ${critBadge.text} ${critBadge.border}`}
                   >
                     {eq.criticality}
                   </span>

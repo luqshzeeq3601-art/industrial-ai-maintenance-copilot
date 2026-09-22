@@ -59,13 +59,13 @@ export function FaultDistributionChart({
       {/* Header */}
       <div className="flex items-center justify-between border-b border-[#EAEAEA] pb-2.5 mb-3">
         <div className="flex items-center gap-2">
-          <Wrench className="w-4 h-4 text-[#111111]" strokeWidth={2.2} />
-          <h3 className="font-semibold text-xs uppercase tracking-wider text-[#111111]">
-            Alarm & Incident Distribution
+          <Wrench className="w-4 h-4 text-[#64748B]" strokeWidth={2.2} />
+          <h3 className="text-[10.5px] uppercase tracking-[0.08em] font-semibold font-mono text-[#64748B]">
+            Fault ledger — alarms & incidents
           </h3>
         </div>
-        <span className="text-[11px] font-mono text-[#787774]">
-          {totalAlarms} Registered Fault Codes
+        <span className="text-[11px] font-mono tabular-nums text-[#787774]">
+          {totalAlarms} registered fault codes
         </span>
       </div>
 

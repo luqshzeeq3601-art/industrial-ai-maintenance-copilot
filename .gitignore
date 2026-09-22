@@ -37,9 +37,33 @@ scratch/
 .system_generated/
 *.log
 
-# Vector store cache (keep manifest if desired, but index files are regenerated)
-# vector_store/*.faiss
+# Vector store runtime (regenerated via python -m backend.app.rag.ingest)
+vector_store/*.faiss
+vector_store/**/*.faiss
+vector_store/chunks_cache.json
+vector_store/**/chunks_cache.json
+vector_store/manifest.json
+vector_store/**/manifest.json
+vector_store/faiss_index/
+
+# Noisy intermediate retrieval experiments - keep only FINAL_* + README
+reports/retrieval_opt/retrieval_experiments_*
+
+# Graphify runtime
+graphify-out/
+
+# Local browser captures
+.playwright-cli/
+docs/screenshots/*.png
+frontend/screenshot_*.png
 
 # OS specific
 .DS_Store
 Thumbs.db
+*.lnk
+
+# NOTE: deploy/k8s/base/secrets.yaml is intentionally TRACKED as a
+# placeholder-only template (CHANGEME values). It is required by
+# deploy/k8s/base/kustomization.yaml and CI kustomize build.
+# Never put real credentials in it - use ExternalSecrets/KeyVault in prod.
+# See SECURITY.md.

@@ -1,10 +1,12 @@
 """Database query tools for maintenance history and fault codes."""
 from typing import Optional
 from langchain_core.tools import tool
-from backend.app.database.repository import IndustrialRepository
+from backend.app.database.equipment_repository import EquipmentRepository
+from backend.app.database.fault_code_repository import FaultCodeRepository
 from backend.app.tools.schemas import MaintenanceHistoryInput, FaultCodeInput
 
-repo = IndustrialRepository()
+equipment_repo = EquipmentRepository()
+fault_repo = FaultCodeRepository()
 
 @tool(args_schema=MaintenanceHistoryInput)
 def query_maintenance_history(machine_id: str, limit: int = 5) -> str:
@@ -14,7 +16,7 @@ def query_maintenance_history(machine_id: str, limit: int = 5) -> str:
         machine_id: The unique identifier of the equipment (e.g. 'EQ-1000', 'EQ-1001', 'EQ-1004').
         limit: Number of recent maintenance records to fetch (default is 5, max 20).
     """
-    rows = repo.get_maintenance_history(machine_id, limit=limit)
+    rows = equipment_repo.get_maintenance_history(machine_id, limit=limit)
     if not rows:
         return f"No maintenance history found in database for machine '{machine_id}'."
 
@@ -36,7 +38,7 @@ def query_fault_code(code: str) -> str:
     Args:
         code: The fault alarm code (e.g., 'E-402', 'H-104', 'E-501', 'H-208', 'M-102').
     """
-    row = repo.get_fault_code(code)
+    row = fault_repo.get_fault_code(code)
     if not row:
         return f"Fault code '{code}' not found in standard fault database."
 

@@ -1,13 +1,13 @@
 """Retrieval Agent: Specialized in technical documentation and SOP search."""
 import logging
 from langchain_core.messages import HumanMessage, AIMessage
-from langchain_ollama import ChatOllama
 from langgraph.prebuilt import create_react_agent
 from langgraph.types import Command
 from backend.app.config import settings
 from backend.app.agents.state import AgentState
 from backend.app.tools.search_docs import search_technical_docs, get_last_citations
 from backend.app.tools.query_db import query_fault_code
+from backend.app.llm.factory import get_chat_model
 
 logger = logging.getLogger("copilot.agents.retrieval")
 
@@ -21,9 +21,7 @@ Be direct, precise, and safety-conscious.
 """
 
 def create_retrieval_node():
-    llm = ChatOllama(
-        model=settings.LLM_MODEL,
-        base_url=settings.OLLAMA_BASE_URL,
+    llm = get_chat_model(
         temperature=settings.LLM_TEMPERATURE,
         num_ctx=settings.LLM_CONTEXT_WINDOW
     )

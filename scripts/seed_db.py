@@ -74,9 +74,14 @@ def seed():
     cur = conn.cursor()
 
     print("Seeding equipment...")
-    cur.execute("DELETE FROM equipment")
-    cur.execute("DELETE FROM fault_codes")
-    cur.execute("DELETE FROM maintenance_logs")
+    # Children-first delete order (Fix5: was parents-first -> FK fail).
+    for tbl in ["telemetry_events", "action_audit", "maintenance_logs",
+                "scheduled_inspections", "alarms", "work_orders",
+                "equipment", "fault_codes"]:
+        try:
+            cur.execute(f"DELETE FROM {tbl}")
+        except Exception:
+            pass
 
     # Insert Fault Codes
     for code, desc, cat, cause, action, sev in FAULT_CODES:

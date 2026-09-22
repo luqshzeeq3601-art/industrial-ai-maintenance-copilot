@@ -3,6 +3,8 @@ import json
 import time
 from pathlib import Path
 import pytest
+
+pytestmark = pytest.mark.slow
 from fastapi.testclient import TestClient
 from backend.app.main import app
 

@@ -1,0 +1,28 @@
+groups:
+  - name: industrial-copilot
+    interval: 30s
+    rules:
+      - alert: HighAbstentionRate
+        expr: rate(abstention_events_total[5m]) > 0.3
+        for: 5m
+        labels: {severity: warning}
+        annotations:
+          summary: "Abstention spike - possible RAG regression or out-of-domain flood"
+      - alert: RAGLatencyP95High
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{endpoint=~"/api/chat.*"}[5m])) > 0.3
+        for: 5m
+        labels: {severity: critical}
+        annotations:
+          summary: "RAG p95 >300ms - check FAISS/BM25 + embedding latency"
+      - alert: LLMTokenCostAnomaly
+        expr: increase(llm_token_usage_total[1h]) > 500000
+        for: 15m
+        labels: {severity: warning}
+        annotations:
+          summary: "Token burn anomaly - check prompt loops / expansion depth"
+      - alert: TelemetryBacklog
+        expr: up{job="industrial-copilot-backend"} == 0
+        for: 2m
+        labels: {severity: critical}
+        annotations:
+          summary: "Backend down - MQTT/REST telemetry not ingested, HITL queue stalled"

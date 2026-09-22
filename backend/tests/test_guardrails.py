@@ -2,6 +2,8 @@
 import pytest
 from backend.app.guardrails.abstention import check_query_domain, evaluate_evidence
 
+pytestmark = pytest.mark.slow  # needs HF embedding download (391 weights)
+
 def test_out_of_domain_queries():
     out_of_domain_samples = [
         "What is the weather in London today?",

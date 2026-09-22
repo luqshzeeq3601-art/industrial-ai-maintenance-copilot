@@ -1,7 +1,8 @@
 """Authentication router for login, logout, and current user session."""
 from fastapi import APIRouter, HTTPException, Response, Request, Depends, status
 from pydantic import BaseModel, Field
-from backend.app.database.repository import IndustrialRepository
+from backend.app.config import settings
+from backend.app.database.user_audit_telemetry_repository import UserRepository
 from backend.app.auth.security import (
     verify_password,
     create_access_token,
@@ -13,7 +14,7 @@ from backend.app.auth.security import (
 )
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
-repo = IndustrialRepository()
+repo = UserRepository()
 
 class LoginRequest(BaseModel):
     username: str = Field(..., min_length=3, max_length=50)
@@ -38,6 +39,7 @@ def login(payload: LoginRequest, response: Response):
 
     token = create_access_token(user["user_id"], user["username"], user["role"])
     csrf_token = generate_csrf_token()
+    is_prod = settings.ENV.lower() == "production"
 
     # Set secure HttpOnly cookie
     response.set_cookie(
@@ -45,7 +47,7 @@ def login(payload: LoginRequest, response: Response):
         value=token,
         httponly=True,
         samesite="lax",
-        secure=False, # Set to True if in HTTPS/production
+        secure=is_prod, # True in HTTPS/production via TLS ingress
         max_age=24 * 3600
     )
     # Set CSRF cookie (readable by JS to send back in X-CSRF-Token header)
@@ -54,7 +56,7 @@ def login(payload: LoginRequest, response: Response):
         value=csrf_token,
         httponly=False,
         samesite="lax",
-        secure=False,
+        secure=is_prod,
         max_age=24 * 3600
     )
 

@@ -7,10 +7,10 @@ from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError, InvalidHash
 from fastapi import Request, HTTPException, status, Depends
 from backend.app.config import settings
-from backend.app.database.repository import IndustrialRepository
+from backend.app.database.user_audit_telemetry_repository import UserRepository
 
 ph = PasswordHasher()
-repo = IndustrialRepository()
+repo = UserRepository()
 
 AUTH_COOKIE_NAME = "copilot_auth"
 CSRF_COOKIE_NAME = "copilot_csrf"

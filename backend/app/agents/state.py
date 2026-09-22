@@ -20,3 +20,14 @@ class AgentState(TypedDict):
     evidence_chunks: List[Dict[str, Any]]
     status: str # 'completed', 'approval_required', 'rejected', 'failed'
     error: Optional[str]
+
+
+MAX_TRACE_STEPS = 50
+
+
+def append_trace(trace: List[Dict[str, Any]], step: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """Append with cap - prevents unbounded thread/checkpoint growth (Fix4)."""
+    trace.append(step)
+    if len(trace) > MAX_TRACE_STEPS:
+        del trace[: len(trace) - MAX_TRACE_STEPS]
+    return trace

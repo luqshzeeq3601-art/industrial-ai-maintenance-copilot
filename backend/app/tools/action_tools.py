@@ -51,7 +51,7 @@ def acknowledge_alarm(alarm_id: str) -> dict:
     Args:
         alarm_id: The alarm identifier (e.g. 'ALM-001', 'ALM-002').
     """
-    alarm = service.repo.get_alarm_by_id(alarm_id)
+    alarm = service.alarms.get_alarm_by_id(alarm_id)
     if not alarm:
         return {
             "error": f"Alarm '{alarm_id}' was not found in plant alarm database.",

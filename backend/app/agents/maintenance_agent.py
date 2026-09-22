@@ -4,7 +4,6 @@ import re
 import uuid
 from datetime import datetime, timedelta
 from langchain_core.messages import HumanMessage, AIMessage
-from langchain_ollama import ChatOllama
 from langgraph.prebuilt import create_react_agent
 from langgraph.types import Command
 from backend.app.config import settings
@@ -12,6 +11,7 @@ from backend.app.agents.state import AgentState
 from backend.app.services.equipment_service import EquipmentService
 from backend.app.tools.search_docs import search_technical_docs, get_last_citations
 from backend.app.tools.query_db import query_maintenance_history
+from backend.app.llm.factory import get_chat_model
 
 logger = logging.getLogger("copilot.agents.maintenance")
 service = EquipmentService()
@@ -26,9 +26,7 @@ Your responsibility:
 """
 
 def create_maintenance_node():
-    llm = ChatOllama(
-        model=settings.LLM_MODEL,
-        base_url=settings.OLLAMA_BASE_URL,
+    llm = get_chat_model(
         temperature=settings.LLM_TEMPERATURE,
         num_ctx=settings.LLM_CONTEXT_WINDOW
     )
