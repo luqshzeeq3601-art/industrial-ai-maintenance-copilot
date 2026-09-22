@@ -18,12 +18,12 @@ Runs **100% locally with zero external API costs** on consumer hardware (tested 
 
 ## Outcomes
 
-- Orchestrated retrieval, diagnostic, and maintenance agents in a LangGraph StateGraph, pausing every work-order, inspection, or alarm change at an `interrupt()` gate until a supervisor approves.
-- Fused FAISS dense and BM25 lexical search with Reciprocal Rank Fusion (k = 60) across 5 plant domains, reaching 94.0% Recall@3, 98.0% Recall@5, and 0.793 MRR at 202.4 ms p95 on 50 labeled queries.
-- Screened out-of-domain and prompt-injection queries with an embedding guardrail scoring 97.0% accuracy, 94.3% abstention precision, and 100% abstention recall on a 100-case benchmark.
-- Authenticated REST and MQTT (QoS 1) sensor telemetry with HMAC SHA-256 signatures and 300 s replay protection, raising alarms while never auto-creating work orders.
-- Cut modeled LLM cost from $74.50 to $0.00 per 10,000 queries by serving Qwen2.5-7B on local Ollama, keeping Azure OpenAI as a switchable cloud provider.
-- Containerized the stack with 4 Docker Compose profiles (MQTT, observability, PostgreSQL, all) and Kubernetes Kustomize manifests validated by a GitHub Actions CI job.
+- Retrieved the right manual section in the top 3 results for 94.0% of 50 labeled plant queries (98.0% Recall@5, 0.793 MRR) at 202 ms p95, by fusing FAISS dense and BM25 search with Reciprocal Rank Fusion across 5 plant domains.
+- Blocked 100% of unsafe and off-topic prompts on a 100-case benchmark (97.0% guardrail accuracy, 94.3% abstention precision), so the copilot declines instead of guessing.
+- Gated every AI-proposed work order, inspection, and alarm change behind supervisor approval, orchestrating retrieval, diagnostic, and maintenance agents with a LangGraph `interrupt()` checkpoint and 3 RBAC roles.
+- Eliminated LLM spend, cutting modeled cost from $74.50 to $0.00 per 10,000 queries by serving Qwen2.5-7B on local Ollama, with Azure OpenAI kept as a one-switch cloud fallback.
+- Secured live sensor feeds over REST and MQTT (QoS 1) with HMAC SHA-256 signatures and 300 s replay protection; telemetry raises alarms but can never create work orders on its own.
+- Packaged the platform for plant and cloud rollout with 4 Docker Compose profiles, Kubernetes Kustomize manifests, and GitHub Actions CI over 82 pytest tests.
 
 ---
 
