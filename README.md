@@ -14,11 +14,22 @@ An enterprise-grade, **Agentic AI Maintenance Assistant & Human-in-the-Loop Copi
 
 Runs **100% locally with zero external API costs** on consumer hardware (tested on Intel Core i7 / NVIDIA GeForce RTX 3070 8GB VRAM) using Ollama (`qwen2.5:7b-instruct`) and `BAAI/bge-large-en-v1.5`, or can seamlessly scale to managed **Azure OpenAI** in cloud environments.
 
+---
+
+## Outcomes
+
+- Orchestrated retrieval, diagnostic, and maintenance agents in a LangGraph StateGraph, pausing every work-order, inspection, or alarm change at an `interrupt()` gate until a supervisor approves.
+- Fused FAISS dense and BM25 lexical search with Reciprocal Rank Fusion (k = 60) across 5 plant domains, reaching 94.0% Recall@3, 98.0% Recall@5, and 0.793 MRR at 202.4 ms p95 on 50 labeled queries.
+- Screened out-of-domain and prompt-injection queries with an embedding guardrail scoring 97.0% accuracy, 94.3% abstention precision, and 100% abstention recall on a 100-case benchmark.
+- Authenticated REST and MQTT (QoS 1) sensor telemetry with HMAC SHA-256 signatures and 300 s replay protection, raising alarms while never auto-creating work orders.
+- Cut modeled LLM cost from $74.50 to $0.00 per 10,000 queries by serving Qwen2.5-7B on local Ollama, keeping Azure OpenAI as a switchable cloud provider.
+- Containerized the stack with 4 Docker Compose profiles (MQTT, observability, PostgreSQL, all) and Kubernetes Kustomize manifests validated by a GitHub Actions CI job.
 
 ---
 
 ## Contents
 
+- [Outcomes](#outcomes)
 - [Features](#features)
 - [System Architecture](#system-architecture)
 - [Human-in-the-Loop & RBAC Approval Workflow](#human-in-the-loop--rbac-approval-workflow)
@@ -35,7 +46,6 @@ Runs **100% locally with zero external API costs** on consumer hardware (tested 
 - [Contributing](#contributing)
 - [Security](#security)
 - [License & Roadmap](#license--roadmap)
-- [Resume Bullet Points](#resume-bullet-points)
 
 ---
 
@@ -405,12 +415,3 @@ See `SECURITY.md`: never commit `.env`, `*.key`, `*.pem`, or real `deploy/k8s/ba
 - License: MIT — see `LICENSE`.
 - Roadmap: `docs/roadmap/README.md` (phases 0–3 plus ME/EE handover and edge deploy).
 - Changelog: `CHANGELOG.md`.
-
----
-
-## 💼 Resume Bullet Points
-
-- **Architected a Human-in-the-Loop industrial copilot using LangGraph StateGraph, dual persistence (SqliteSaver / PostgresSaver), and Argon2id/JWT RBAC, implementing interrupt-driven supervisor approval gates that prevent unauthorized plant equipment mutations.**
-- **Engineered high-throughput REST & MQTT (QoS 1) telemetry ingestion with HMAC SHA-256 signature verification and 300s clock-skew replay protection, mapping anomalous vibration/thermal/vacuum sensor metrics into automated alarms while enforcing strict HITL work-order isolation.**
-- **Designed a hybrid FAISS dense and BM25 lexical retrieval engine with Reciprocal Rank Fusion ($k=60$), header-aware semantic chunking, and prototype embedding guardrails across 5 domains (including Semiconductor fabrication), achieving 97.0% domain guardrail accuracy and 94.0% Recall@3 / 98.0% Recall@5 (MRR 0.793, p95 202.4ms on RTX 3070, measured on 50 labeled retrieval queries within a 100-case benchmark).**
-- **Standardized multi-provider LLM abstraction supporting on-premise Ollama (zero API marginal cost) and cloud Azure OpenAI with automated token telemetry and Kubernetes Kustomize deployment manifests.**
