@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import {
   ShieldAlert,
   ShieldCheck,
@@ -9,8 +9,9 @@ import {
   Wrench,
   Bell,
   Lock,
+  Clock,
 } from "lucide-react";
-import type { AuthUser } from "./AuthModal";
+import type { AuthUser } from "../api/auth";
 
 export interface PendingActionPayload {
   action_id: string;
@@ -45,16 +46,17 @@ export function ActionApprovalCard({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const isSupervisorOrAdmin =
-    currentUser && (currentUser.role === "supervisor" || currentUser.role === "admin");
+  const isReviewer = currentUser?.role === "supervisor" || currentUser?.role === "admin";
+  // Segregation of duties: the requester never decides on their own action (enforced server-side too).
+  const isOwnRequest = !!currentUser && action.requester === currentUser.username;
+  const canDecide = isReviewer && !isOwnRequest;
 
   const args = action.arguments || {};
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (currentUser?.csrf_token) headers["X-CSRF-Token"] = currentUser.csrf_token;
 
   const handleApprove = async () => {
-    if (!isSupervisorOrAdmin) {
-      if (onOpenAuth) onOpenAuth();
-      return;
-    }
+    if (!canDecide || !currentUser) return;
 
     setSubmitting(true);
     setError(null);
@@ -63,7 +65,7 @@ export function ActionApprovalCard({
       const resp = await fetch(`${apiBase}/api/v1/actions/${action.action_id}/approve`, {
         method: "POST",
         credentials: "include",
-        headers: { "Content-Type": "application/json" },
+        headers,
       });
 
       if (!resp.ok) {
@@ -78,29 +80,16 @@ export function ActionApprovalCard({
       if (onDecisionMade) {
         onDecisionMade(action.action_id, "approved", res.action_result);
       }
-    } catch {
-      // Graceful offline fallback
-      setDecisionState("approved");
-      setApproverName(currentUser.username);
-      const fallbackResult = {
-        status: "success",
-        message: `Action ${action.action_id} authorized by ${currentUser.username}`,
-        timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-      };
-      setActionResult(fallbackResult);
-      if (onDecisionMade) {
-        onDecisionMade(action.action_id, "approved", fallbackResult);
-      }
+    } catch (err) {
+      // Never show an approval the server did not record.
+      setError(err instanceof Error ? err.message : "Approval could not be recorded. Try again.");
     } finally {
       setSubmitting(false);
     }
   };
 
   const handleReject = async () => {
-    if (!isSupervisorOrAdmin) {
-      if (onOpenAuth) onOpenAuth();
-      return;
-    }
+    if (!canDecide || !currentUser) return;
 
     setSubmitting(true);
     setError(null);
@@ -109,7 +98,7 @@ export function ActionApprovalCard({
       const resp = await fetch(`${apiBase}/api/v1/actions/${action.action_id}/reject`, {
         method: "POST",
         credentials: "include",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({ reason: rejectionReason || "Declined by supervisor" }),
       });
 
@@ -125,17 +114,8 @@ export function ActionApprovalCard({
       if (onDecisionMade) {
         onDecisionMade(action.action_id, "rejected", res);
       }
-    } catch {
-      // Graceful offline fallback
-      setDecisionState("rejected");
-      setApproverName(currentUser.username);
-      setShowRejectInput(false);
-      if (onDecisionMade) {
-        onDecisionMade(action.action_id, "rejected", {
-          status: "declined",
-          reason: rejectionReason || "Declined by supervisor"
-        });
-      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Rejection could not be recorded. Try again.");
     } finally {
       setSubmitting(false);
     }
@@ -144,265 +124,217 @@ export function ActionApprovalCard({
   const getActionIcon = () => {
     switch (action.action_type) {
       case "create_work_order":
-        return <Wrench className="w-4 h-4 text-[#1F6C9F]" />;
+        return <Wrench className="w-4 h-4 text-accent" />;
       case "schedule_inspection":
-        return <Calendar className="w-4 h-4 text-[#956400]" />;
+        return <Calendar className="w-4 h-4 text-warn" />;
       case "acknowledge_alarm":
-        return <Bell className="w-4 h-4 text-[#9F2F2D]" />;
+        return <Bell className="w-4 h-4 text-danger" />;
       default:
-        return <ShieldAlert className="w-4 h-4 text-[#111111]" />;
+        return <ShieldAlert className="w-4 h-4 text-ink" />;
     }
   };
 
   const formatActionTitle = () => {
     switch (action.action_type) {
       case "create_work_order":
-        return "Maintenance Work Order Authorization";
+        return "Work order authorization";
       case "schedule_inspection":
-        return "Scheduled Inspection Booking";
+        return "Inspection booking";
       case "acknowledge_alarm":
-        return "Safety Alarm Acknowledgment";
+        return "Alarm acknowledgment";
       default:
-        return action.action_type.replace(/_/g, " ").toUpperCase();
+        return action.action_type.replace(/_/g, " ");
     }
   };
 
+  const priority = typeof args.priority === "string" ? args.priority.toLowerCase() : "";
+  const priorityTone = priority === "critical" ? "text-danger" : priority === "high" ? "text-warn" : "text-body";
+  const fields = [
+    args.machine_id && { label: "Asset", value: <span className="font-mono">{args.machine_id}</span> },
+    args.priority && { label: "Priority", value: <span className={`capitalize ${priorityTone}`}>{priority}</span> },
+    args.scheduled_date && { label: "Scheduled", value: args.scheduled_date },
+    args.alarm_id && { label: "Alarm", value: <span className="font-mono text-danger">{args.alarm_id}</span> }
+  ].filter(Boolean) as { label: string; value: ReactNode }[];
+
   return (
     <div
-      onMouseMove={(e) => {
-        const el = e.currentTarget;
-        const r = el.getBoundingClientRect();
-        el.style.setProperty("--mx", `${e.clientX - r.left}px`);
-        el.style.setProperty("--my", `${e.clientY - r.top}px`);
-      }}
-      className={`spotlight my-4 rounded-[var(--radius-outer)] bg-[#FFFFFF] shadow-[var(--shadow-tinted-sm)] overflow-hidden text-xs text-[#111111] border border-[#EAEAEA] border-l-4 ${
+      className={`my-2 rounded-lg bg-panel border border-line border-l-[3px] text-[13px] text-ink ${
         decisionState === "approved"
-          ? "border-l-[#346538]"
+          ? "border-l-status-ok"
           : decisionState === "rejected"
-          ? "border-l-[#9F2F2D]"
-          : "border-l-[#956400]"
+          ? "border-l-status-fault"
+          : "border-l-status-maint"
       }`}
     >
-      {/* Header Banner */}
-      <div className="bg-[#FBFBFA] border-b border-[#EAEAEA] px-4 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className="p-1.5 rounded-[var(--radius-inner)] bg-white border border-[#EAEAEA] shadow-[var(--shadow-tinted-xs)]">
-            {getActionIcon()}
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="font-semibold text-xs text-[#111111] font-mono">
-                {formatActionTitle()}
-              </span>
-              <span className="font-mono text-[10px] px-1.5 py-0.2 bg-[#F4F4F2] border border-[#EAEAEA] rounded text-[#787774]">
-                {action.action_id}
-              </span>
-            </div>
-            <p className="text-[10.5px] text-[#787774]">
-              Human-in-the-Loop Gateway • LangGraph Interrupt Protocol
-            </p>
-          </div>
-        </div>
-
-        {decisionState === "pending" && (
-          <span className="inline-flex items-center gap-1 text-[12px] px-2.5 py-1 rounded-md bg-[#FBF3DB] text-[#713F12] border border-[#F59E0B]/30 font-mono font-medium motion-safe:animate-pulse">
-            <ShieldAlert className="w-3.5 h-3.5" aria-hidden="true" />
-            Pending Approval
-          </span>
-        )}
-        {decisionState === "approved" && (
-          <span className="inline-flex items-center gap-1 text-[12px] px-2.5 py-1 rounded-md bg-[#EDF3EC] text-[#14532D] border border-[#16A34A]/30 font-mono font-medium">
-            <CheckCircle2 className="w-3.5 h-3.5" aria-hidden="true" />
-            Approved
-          </span>
-        )}
-        {decisionState === "rejected" && (
-          <span className="inline-flex items-center gap-1 text-[12px] px-2.5 py-1 rounded-md bg-[#FDEBEC] text-[#7F1D1D] border border-[#DC2626]/30 font-mono font-medium">
-            <XCircle className="w-3.5 h-3.5" aria-hidden="true" />
-            Rejected
-          </span>
-        )}
+      <div className="px-4 pt-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+        <h4 className="flex items-center gap-2 text-[14px] font-semibold text-ink">
+          <span aria-hidden="true">{getActionIcon()}</span>
+          {formatActionTitle()}
+        </h4>
+        <span role="status" className="text-[12px] font-semibold">
+          {decisionState === "pending" && (
+            <span className="inline-flex items-center gap-1.5 text-warn">
+              {canDecide ? (
+                <ShieldAlert className="w-3.5 h-3.5" aria-hidden="true" />
+              ) : (
+                <Clock className="w-3.5 h-3.5" aria-hidden="true" />
+              )}
+              {canDecide ? "Needs your approval" : "Awaiting supervisor"}
+            </span>
+          )}
+          {decisionState === "approved" && (
+            <span className="inline-flex items-center gap-1.5 text-success">
+              <CheckCircle2 className="w-3.5 h-3.5" aria-hidden="true" />
+              Approved
+            </span>
+          )}
+          {decisionState === "rejected" && (
+            <span className="inline-flex items-center gap-1.5 text-danger">
+              <XCircle className="w-3.5 h-3.5" aria-hidden="true" />
+              Rejected
+            </span>
+          )}
+        </span>
       </div>
 
-      {/* Body / Action Parameters */}
-      <div className="p-4 lg:p-5 space-y-3">
-        {action.summary && (
-          <p className="font-medium text-[14px] text-[#111111] leading-relaxed measure">
-            {action.summary}
+      <div className="px-4 pb-3 pt-2 space-y-3">
+        {action.summary && <p className="text-[14px] text-body leading-relaxed max-w-[65ch]">{action.summary}</p>}
+
+        {(fields.length > 0 || args.description) && (
+          <dl className="grid grid-cols-2 @min-[480px]:grid-cols-4 gap-x-4 gap-y-2">
+            {fields.map(({ label, value }) => (
+              <div key={label} className="min-w-0">
+                <dt className="text-[12px] text-muted">{label}</dt>
+                <dd className="font-semibold text-ink truncate">{value}</dd>
+              </div>
+            ))}
+            {args.description && (
+              <div className="col-span-full">
+                <dt className="text-[12px] text-muted">Scope</dt>
+                <dd className="text-body leading-relaxed">{args.description}</dd>
+              </div>
+            )}
+          </dl>
+        )}
+
+        <p className="text-[12px] text-muted">
+          Requested by{" "}
+          <span className="font-medium text-body">{isOwnRequest ? "you" : action.requester || "technician"}</span>
+          {!isOwnRequest && action.requester_role ? ` (${action.requester_role})` : ""}
+          <span className="text-subtle">, request </span>
+          <span className="font-mono">{action.action_id}</span>
+        </p>
+
+        {error && (
+          <p className="p-3 rounded-md bg-danger-bg border border-danger-line text-danger-ink" role="alert">
+            {error}
           </p>
         )}
 
-        <div className="grid grid-cols-2 gap-2 bg-[#F8FAFC] p-3 rounded-lg border border-[#E2E8F0] text-[12px] font-mono">
-          {args.machine_id && (
-            <div>
-              <span className="text-[#787774] block text-[10px] uppercase">Target Asset:</span>
-              <span className="font-semibold text-[#111111]">{args.machine_id}</span>
-            </div>
-          )}
-          {args.priority && (
-            <div>
-              <span className="text-[#787774] block text-[10px] uppercase">Priority:</span>
-              <span
-                className={`font-semibold uppercase ${
-                  args.priority.toLowerCase() === "critical"
-                    ? "text-[#9F2F2D]"
-                    : args.priority.toLowerCase() === "high"
-                    ? "text-[#956400]"
-                    : "text-[#346538]"
-                }`}
-              >
-                {args.priority}
-              </span>
-            </div>
-          )}
-          {args.scheduled_date && (
-            <div>
-              <span className="text-[#787774] block text-[10px] uppercase">Scheduled For:</span>
-              <span className="font-semibold text-[#111111]">{args.scheduled_date}</span>
-            </div>
-          )}
-          {args.alarm_id && (
-            <div>
-              <span className="text-[#787774] block text-[10px] uppercase">Alarm ID:</span>
-              <span className="font-semibold text-[#9F2F2D]">{args.alarm_id}</span>
-            </div>
-          )}
-          {args.description && (
-            <div className="col-span-2 pt-1 border-t border-[#EAEAEA] mt-1">
-              <span className="text-[#787774] block text-[10px] uppercase">Description:</span>
-              <span className="text-[#2F3437] font-sans text-xs">{args.description}</span>
-            </div>
-          )}
-        </div>
-
-        {/* Requester Trace */}
-        <div className="flex items-center justify-between text-[12px] text-[#475569] font-mono pt-1">
-          <span>
-            Initiated by:{" "}
-            <strong className="text-[#111111]">{action.requester || "technician"}</strong> (
-            {action.requester_role || "technician"})
-          </span>
-          {action.session_id && <span>Thread: {action.session_id.slice(0, 16)}...</span>}
-        </div>
-
-        {error && (
-          <div className="p-3 rounded-lg bg-[#FDEBEC] border border-[#FCA5A5] text-[#7F1D1D] text-[13px]" role="alert">
-            {error}
-          </div>
-        )}
-
-        {/* Action Controls when Pending */}
         {decisionState === "pending" && (
-          <div className="pt-2 border-t border-[#E2E8F0] space-y-2">
-            {!isSupervisorOrAdmin ? (
-              <div className="flex items-center justify-between gap-2 p-3 rounded-lg bg-[#FFFBEB] border border-[#F59E0B]/30 text-[13px]">
-                <div className="flex items-center gap-2 text-[#713F12]">
+          <div className="pt-3 border-t border-line">
+            {!currentUser ? (
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <p className="flex items-center gap-2 text-muted flex-1 min-w-[200px]">
                   <Lock className="w-4 h-4 shrink-0" aria-hidden="true" />
-                  <span>
-                    Authorization requires <strong>Supervisor</strong> or <strong>Admin</strong> privileges.
-                  </span>
-                </div>
+                  Sign in to follow this request.
+                </p>
                 <button
                   type="button"
                   onClick={onOpenAuth}
-                  className="min-h-[44px] px-3 py-2 bg-[#111111] text-white rounded-lg text-[13px] font-medium hover:bg-[#262626] transition-colors shrink-0"
+                  className="min-h-[40px] px-4 rounded-md border border-accent text-accent-ink hover:bg-accent-bg text-[13px] font-semibold transition-colors shrink-0 cursor-pointer"
                 >
-                  Log In as Supervisor
+                  Sign in
                 </button>
               </div>
+            ) : !canDecide ? (
+              <p className="flex items-start gap-2 text-muted max-w-[65ch]">
+                <Lock className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />
+                {isOwnRequest && isReviewer
+                  ? "You requested this, so another supervisor or admin must approve it."
+                  : "Sent to the supervisor approval queue. Nothing runs until a supervisor or admin approves it."}
+              </p>
+            ) : showRejectInput ? (
+              <div className="space-y-2">
+                <label htmlFor={`reject-reason-${action.action_id}`} className="block text-[13px] font-semibold text-body">
+                  Reason for rejection
+                </label>
+                <input
+                  id={`reject-reason-${action.action_id}`}
+                  type="text"
+                  value={rejectionReason}
+                  onChange={(e) => setRejectionReason(e.target.value)}
+                  placeholder="e.g. Schedule conflict, parts not in stock"
+                  className="w-full min-h-[44px] px-3 bg-panel border border-line-strong rounded-md text-[14px] placeholder:text-subtle focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/15"
+                />
+                <div className="flex items-center justify-end gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setShowRejectInput(false)}
+                    disabled={submitting}
+                    className="min-h-[40px] px-4 rounded-md text-[13px] font-semibold text-muted hover:text-ink hover:bg-wash transition-colors cursor-pointer disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleReject}
+                    disabled={submitting}
+                    className="min-h-[40px] px-4 rounded-md bg-danger hover:bg-danger-ink text-white text-[13px] font-semibold transition-colors cursor-pointer disabled:opacity-50"
+                  >
+                    {submitting ? "Rejecting…" : "Confirm rejection"}
+                  </button>
+                </div>
+              </div>
             ) : (
-              <div>
-                {showRejectInput ? (
-                  <div className="space-y-2 bg-[#F8FAFC] p-3 rounded-lg border border-[#E2E8F0]">
-                    <label htmlFor={`reject-reason-${action.action_id}`} className="block text-[12px] font-medium text-[#475569]">
-                      Reason for Rejection:
-                    </label>
-                    <input
-                      id={`reject-reason-${action.action_id}`}
-                      type="text"
-                      value={rejectionReason}
-                      onChange={(e) => setRejectionReason(e.target.value)}
-                      placeholder="e.g. Schedule conflict, insufficient parts inventory..."
-                      className="w-full min-h-[44px] px-3 py-2.5 bg-white border border-[#CBD5E1] rounded-lg text-[14px] placeholder-[#64748B] focus:outline-none focus:border-[#111111]"
-                    />
-                    <div className="flex items-center justify-end gap-2 pt-1">
-                      <button
-                        type="button"
-                        onClick={() => setShowRejectInput(false)}
-                        disabled={submitting}
-                        className="min-h-[44px] px-4 py-2 rounded-lg text-[13px] text-[#475569] hover:bg-[#F1F5F9]"
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        type="button"
-                        onClick={handleReject}
-                        disabled={submitting}
-                        className="min-h-[44px] px-4 py-2 rounded-lg bg-[#991B1B] text-white text-[13px] font-medium hover:bg-[#7F1D1D] disabled:opacity-50"
-                      >
-                        {submitting ? "Rejecting..." : "Confirm Rejection"}
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-end gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setShowRejectInput(true)}
-                      disabled={submitting}
-                      className="inline-flex items-center gap-1.5 min-h-[44px] px-4 py-2 rounded-lg border border-[#CBD5E1] hover:border-[#FCA5A5] text-[#991B1B] hover:bg-[#FEF2F2] transition-colors font-medium text-[13px] disabled:opacity-50"
-                    >
-                      <Ban className="w-4 h-4" aria-hidden="true" />
-                      <span>Reject</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={handleApprove}
-                      disabled={submitting}
-                      className="inline-flex items-center gap-1.5 min-h-[44px] px-5 py-2 rounded-lg bg-[#15803D] hover:bg-[#166534] text-white shadow-sm font-medium text-[13px] transition-colors disabled:opacity-50"
-                    >
-                      <ShieldCheck className="w-4 h-4" aria-hidden="true" />
-                      <span>{submitting ? "Authorizing..." : "Approve & Execute"}</span>
-                    </button>
-                  </div>
-                )}
+              <div className="flex flex-wrap items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowRejectInput(true)}
+                  disabled={submitting}
+                  className="inline-flex items-center gap-1.5 min-h-[40px] px-4 rounded-md border border-line-strong text-danger hover:bg-danger-bg transition-colors font-semibold text-[13px] cursor-pointer disabled:opacity-50"
+                >
+                  <Ban className="w-4 h-4" aria-hidden="true" />
+                  Reject
+                </button>
+                <button
+                  type="button"
+                  onClick={handleApprove}
+                  disabled={submitting}
+                  className="inline-flex items-center gap-1.5 min-h-[40px] px-4 rounded-md bg-success hover:bg-success-ink text-white font-semibold text-[13px] transition-colors cursor-pointer disabled:opacity-50"
+                >
+                  <ShieldCheck className="w-4 h-4" aria-hidden="true" />
+                  {submitting ? "Approving…" : "Approve and execute"}
+                </button>
               </div>
             )}
           </div>
         )}
 
-        {/* State Post-Decision Details */}
         {decisionState === "approved" && (
-          <div className="p-2.5 rounded bg-[#EDF3EC] border border-[#346538]/20 text-[#346538] text-[11.5px] space-y-1">
+          <div className="pt-3 border-t border-line text-success-ink space-y-0.5">
             <p className="font-semibold flex items-center gap-1.5">
-              <CheckCircle2 className="w-3.5 h-3.5" />
-              <span>
-                Authorized by supervisor: <strong>{approverName}</strong>
-              </span>
+              <CheckCircle2 className="w-4 h-4 shrink-0" aria-hidden="true" />
+              Approved by {approverName}
             </p>
             {actionResult && (
-              <p className="font-mono text-[11px] opacity-90">
-                {actionResult.work_order_id && `Created Work Order: ${actionResult.work_order_id}`}
-                {actionResult.inspection_id && `Created Inspection: ${actionResult.inspection_id}`}
-                {actionResult.alarm_id && `Acknowledged Alarm: ${actionResult.alarm_id}`}
-                {actionResult.message && ` • ${actionResult.message}`}
+              <p className="text-[12px] pl-[22px]">
+                {actionResult.work_order_id && `Work order ${actionResult.work_order_id} created`}
+                {actionResult.inspection_id && `Inspection ${actionResult.inspection_id} booked`}
+                {actionResult.alarm_id && `Alarm ${actionResult.alarm_id} acknowledged`}
+                {actionResult.message && `. ${actionResult.message}`}
               </p>
             )}
           </div>
         )}
 
         {decisionState === "rejected" && (
-          <div className="p-2.5 rounded bg-[#FDEBEC] border border-[#9F2F2D]/20 text-[#9F2F2D] text-[11.5px]">
+          <div className="pt-3 border-t border-line text-danger-ink space-y-0.5">
             <p className="font-semibold flex items-center gap-1.5">
-              <XCircle className="w-3.5 h-3.5" />
-              <span>
-                Rejected by supervisor: <strong>{approverName}</strong>
-              </span>
+              <XCircle className="w-4 h-4 shrink-0" aria-hidden="true" />
+              Rejected by {approverName}
             </p>
-            {rejectionReason && (
-              <p className="mt-0.5 text-[11px] opacity-90">Reason: {rejectionReason}</p>
-            )}
+            {rejectionReason && <p className="text-[12px] pl-[22px]">Reason: {rejectionReason}</p>}
           </div>
         )}
       </div>

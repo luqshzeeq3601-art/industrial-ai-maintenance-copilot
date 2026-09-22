@@ -14,6 +14,12 @@ repo = AuditRepository()
 class RejectPayload(BaseModel):
     reason: Optional[str] = Field(default="Rejected by supervisor", max_length=250)
 
+def _forbid_self_approval(row: Dict[str, Any], current_user: Dict[str, Any]) -> None:
+    """Segregation of duties: the person who requested an action cannot decide on it."""
+    if row.get("user_id") == current_user["username"]:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
+                            detail="You requested this action. Another supervisor or admin must decide on it.")
+
 @router.get("/pending")
 def list_pending_actions(
     current_user: Dict[str, Any] = Depends(require_roles(["supervisor", "admin"]))
@@ -45,6 +51,7 @@ def approve_action(
         raise HTTPException(status_code=404, detail=f"Pending action '{action_id}' not found.")
     if repo.has_decision(action_id):
         raise HTTPException(status_code=400, detail=f"Action '{action_id}' has already been processed.")
+    _forbid_self_approval(row, current_user)
     payload = json.loads(row["payload_json"])
     session_id = payload.get("session_id")
     if not session_id:
@@ -69,6 +76,7 @@ def reject_action(
         raise HTTPException(status_code=404, detail=f"Pending action '{action_id}' not found.")
     if repo.has_decision(action_id):
         raise HTTPException(status_code=400, detail=f"Action '{action_id}' has already been processed.")
+    _forbid_self_approval(row, current_user)
     action_data = json.loads(row["payload_json"])
     session_id = action_data.get("session_id")
     if not session_id:

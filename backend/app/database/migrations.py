@@ -239,6 +239,55 @@ def seed_initial_simulated_platform(conn: sqlite3.Connection):
     cur = conn.cursor()
     ph = PasswordHasher()
 
+    # Bootstrap FK parents on fresh databases: the v2 seeds below reference
+    # equipment + fault codes, which the standalone migration path never
+    # inserted (only scripts/seed_db.py did). INSERT OR IGNORE keeps this
+    # a no-op when real data already exists.
+    cur.execute("SELECT count(*) FROM fault_codes")
+    if cur.fetchone()[0] == 0:
+        cur.executemany(
+            "INSERT OR IGNORE INTO fault_codes (code, description, category, typical_cause, recommended_action, severity) VALUES (?, ?, ?, ?, ?, ?)",
+            [
+                ("E-402", "Spindle Drive Thermal Overload", "electrical", "Chiller fluid degradation or dull cutting inserts", "Inspect chiller flow rate and check spindle bearing preload", "high"),
+                ("E-501", "Tool Magazine Indexing Timeout", "mechanical", "Geneva gear chip jam or proximity sensor misalignment", "Reset tool carousel, clear chip debris, calibrate proximity sensor SQ14", "medium"),
+                ("E-210", "Axis Z Drive / Follow-up Error", "electrical", "Brake coil disengage failure or optical linear scale contamination", "Verify 24V brake coil signal and clean optical scale", "high"),
+                ("E-105", "Emergency Stop Circuit Interrupted", "electrical", "Emergency stop pushbutton stuck or safety relay tripped", "Inspect safety gate interlocks and reset safety relay K1", "critical"),
+                ("E-308", "Inverter Bus Undervoltage Alarm", "electrical", "Main incoming line drop or DC bus capacitor aging", "Measure 400V 3-phase incoming supply and DC bus bar voltage", "critical"),
+                ("H-104", "Main Hydraulic Pump Discharge Pressure Drop", "hydraulic", "Prefill poppet valve stuck open or suction strainer cavitation", "Check pilot pressure at G-02 and clean suction strainer", "critical"),
+                ("H-208", "Excessive Hydraulic Fluid Temperature Trip (>68C)", "hydraulic", "Plate heat exchanger clogged or relief valve blowing", "Inspect cooling water flow (min 120 L/min) and touch relief bypass line", "high"),
+                ("H-312", "Main Ram Cylinder Chevron Seal Weep", "hydraulic", "V-packing degradation from particle contamination", "Tighten gland ring or schedule complete ram chevron seal replacement", "medium"),
+                ("H-415", "Proportional Directional Valve Coil Open Circuit", "hydraulic", "Solenoid coil burnout from thermal stress or loose Hirschmann connector", "Measure coil resistance (nominal 28 ohms) and replace cartridge", "high"),
+                ("P-101", "Main Pneumatic Header Pressure Low (<0.45 MPa)", "pneumatic", "Compressor station unloaded or main FRL filter element clogged", "Check central air receiver and drain auto-drain water separator", "medium"),
+                ("P-202", "Pneumatic Clamping Cylinder Slow Travel", "pneumatic", "Exhaust needle throttle silencer clogged with oil mist", "Clean or replace bronze exhaust muffler and grease cylinder bore", "low"),
+                ("M-102", "Spindle Radial Vibration Exceeds ISO Limit (>4.5 mm/s)", "mechanical", "Dynamic unbalance from broken cutter or bearing raceway pitting", "Perform FFT spectrum vibration test and check ISO 40 taper runout", "high"),
+                ("M-205", "X-Axis Ball Screw Backlash Alarm (>0.012 mm)", "mechanical", "Preload nut disc spring fatigue or thrust bearing wear", "Measure axial backlash with dial indicator and adjust double-nut preload", "medium"),
+                ("M-301", "Slideway Automatic Lubrication Fault", "mechanical", "Lube distribution metering valve blocked or low oil level", "Refill Mobil Vactra No 2 and cycle manual priming lever", "medium"),
+                ("M-404", "Conveyor Chip Jam / Torque Limiter Slipped", "mechanical", "Stringy chips wound around drive sprocket", "Clear swarf bundle and reset mechanical friction clutch", "low"),
+                ("S-101", "CNC Controller Memory Parity Error", "software", "Backup lithium battery low or corrupted work coordinate register", "Replace 3.6V memory battery and reload parameter backup", "high"),
+                ("S-202", "Safety Interlock PLC Communication Timeout", "software", "EtherCAT fieldbus patch cable EMI interference or loose RJ45 connector", "Re-terminate fieldbus cable with shielded connectors", "high"),
+                ("S-303", "Part Program G-Code Syntax Out of Range", "software", "Post-processor version mismatch or arc radius I/J calculation error", "Verify CAM post-processor and check program syntax", "low"),
+            ],
+        )
+        logger.info("Bootstrapped 18 fault codes for migration seeds.")
+    cur.execute("SELECT count(*) FROM equipment")
+    if cur.fetchone()[0] == 0:
+        cur.executemany(
+            "INSERT OR IGNORE INTO equipment (machine_id, name, type, location, install_date, last_service, status, operating_hours, criticality) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            [
+                ("EQ-1000", "ApexMill-500", "5-Axis CNC Mill", "Plant A Cell 1", "2020-03-10", "2026-09-01", "fault", 12450, "high"),
+                ("EQ-1001", "RoboArm-X2", "Articulated Welder", "Plant A Cell 2", "2020-06-22", "2026-08-20", "operational", 8320, "high"),
+                ("EQ-1002", "LaserCut-9000", "Fiber Laser Cutter", "Plant B Cell 1", "2021-02-11", "2026-08-25", "operational", 11206, "medium"),
+                ("EQ-1003", "HydroPress-500", "Hydraulic Press", "Plant B Cell 2", "2020-09-05", "2026-08-18", "maintenance", 7540, "high"),
+                ("EQ-1004", "TitanPress-3000", "Stamping Press", "Plant A Cell 3", "2020-01-15", "2026-08-14", "operational", 9118, "critical"),
+                ("EQ-1005", "AeroLathe-Pro", "Precision Lathe", "Plant C Cell 1", "2021-06-19", "2026-07-29", "operational", 6982, "medium"),
+                ("EQ-1006", "WeldBot-200", "Welding Robot", "Plant C Cell 2", "2021-03-27", "2026-08-02", "operational", 10421, "medium"),
+                ("EQ-1007", "PackLine-100", "Packaging System", "Plant B Cell 3", "2021-04-02", "2026-07-30", "operational", 5390, "low"),
+                ("EQ-1008", "CoolantSys-1", "Coolant Station", "Plant A Utility", "2019-11-12", "2026-06-21", "operational", 14230, "high"),
+                ("EQ-1009", "InspectCam-7", "Vision QC System", "Plant C Cell 3", "2022-02-08", "2026-09-05", "operational", 4865, "low"),
+            ],
+        )
+        logger.info("Bootstrapped 10 fleet equipment rows for migration seeds.")
+
     # Seed Default Users if empty
     cur.execute("SELECT count(*) FROM users")
     if cur.fetchone()[0] == 0:

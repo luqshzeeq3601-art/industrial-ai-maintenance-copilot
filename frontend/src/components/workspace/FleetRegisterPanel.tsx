@@ -1,5 +1,7 @@
-import { Truck, Search, ChevronRight } from "lucide-react";
+import { useEffect, useRef, type KeyboardEvent } from "react";
+import { Search, X } from "lucide-react";
 import type { EquipmentData } from "../visualization/OperatingHoursBarChart";
+import { OVERHAUL_THRESHOLD, statusMeta } from "./types";
 
 interface FleetRegisterPanelProps {
   equipment: EquipmentData[];
@@ -9,6 +11,9 @@ interface FleetRegisterPanelProps {
   onSearchChange: (value: string) => void;
 }
 
+// Exceptions sort above the healthy fleet so a fault is never scrolled out of sight
+const STATUS_ORDER: Record<string, number> = { fault: 0, maintenance: 1 };
+
 export function FleetRegisterPanel({
   equipment,
   selectedId,
@@ -16,137 +21,149 @@ export function FleetRegisterPanel({
   searchFilter,
   onSearchChange
 }: FleetRegisterPanelProps) {
-  const filtered = equipment.filter((eq) => {
-    const q = searchFilter.toLowerCase();
-    return (
+  const listRef = useRef<HTMLUListElement>(null);
+
+  // Keep the selected asset visible when it is chosen elsewhere (dashboard, Andon board)
+  useEffect(() => {
+    listRef.current
+      ?.querySelector<HTMLElement>(`[data-asset="${CSS.escape(selectedId)}"]`)
+      ?.scrollIntoView({ block: "nearest" });
+  }, [selectedId]);
+
+  // Arrow keys move focus between rows; Enter/Space selects
+  const onListKey = (e: KeyboardEvent<HTMLUListElement>) => {
+    if (!["ArrowDown", "ArrowUp", "Home", "End"].includes(e.key)) return;
+    const rows = [...(listRef.current?.querySelectorAll<HTMLButtonElement>("button[data-asset]") ?? [])];
+    if (!rows.length) return;
+    e.preventDefault();
+    const i = rows.indexOf(document.activeElement as HTMLButtonElement);
+    const next =
+      e.key === "Home" ? 0 : e.key === "End" ? rows.length - 1 : Math.min(rows.length - 1, Math.max(0, i + (e.key === "ArrowDown" ? 1 : -1)));
+    rows[next].focus();
+  };
+
+  const q = searchFilter.trim().toLowerCase();
+  const filtered = equipment.filter(
+    (eq) =>
       eq.machine_id.toLowerCase().includes(q) ||
       eq.name.toLowerCase().includes(q) ||
       eq.location.toLowerCase().includes(q)
-    );
-  });
+  );
+  const rank = (eq: EquipmentData) => STATUS_ORDER[eq.status.toLowerCase()] ?? 2;
+  const groups = [
+    { id: "attention", title: "Needs attention", items: filtered.filter((eq) => rank(eq) < 2).sort((a, b) => rank(a) - rank(b)) },
+    { id: "running", title: "Running", items: filtered.filter((eq) => rank(eq) === 2) }
+  ].filter((g) => g.items.length > 0);
 
   return (
     <aside
-      aria-label="Fleet Register"
-      className="w-full h-full flex flex-col bg-white rounded-xl border border-[#E2E8F0] shadow-sm overflow-hidden"
+      aria-label="Fleet register"
+      className="w-full h-full flex flex-col bg-panel rounded-xl border border-line shadow-[var(--shadow-tinted-xs)] overflow-hidden"
     >
-      {/* Panel Header */}
-      <div className="px-4 pt-4 pb-3 border-b border-[#E2E8F0]">
-        <div className="flex items-center gap-2 mb-3">
-          <Truck className="w-5 h-5 text-[#0F172A]" strokeWidth={2} />
-          <h2 className="text-[16px] font-bold text-[#0F172A] tracking-tight">
-            Fleet Register ({equipment.length})
-          </h2>
+      <div className="px-4 pt-5 pb-3">
+        <div className="flex items-baseline justify-between gap-2 mb-3">
+          <h2 className="text-[15px] font-semibold text-ink">Fleet</h2>
+          <span className="text-[13px] text-muted tabular-nums" aria-live="polite">
+            {q ? `${filtered.length} of ${equipment.length}` : `${equipment.length} assets`}
+          </span>
         </div>
 
-        {/* Search Bar */}
         <div className="relative">
-          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#64748B]" aria-hidden="true" />
+          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-subtle pointer-events-none" aria-hidden="true" />
           <label htmlFor="fleet-filter" className="sr-only">
-            Filter fleet by ID, model, or bay
+            Search fleet by ID, model, or location
           </label>
           <input
             id="fleet-filter"
-            type="text"
+            type="search"
             value={searchFilter}
             onChange={(e) => onSearchChange(e.target.value)}
-            placeholder="Filter ID, model, bay..."
-            className="w-full min-h-[44px] bg-[#FFFFFF] border border-[#E2E8F0] rounded-lg pl-9 pr-3 py-2.5 text-[14px] text-[#0F172A] placeholder-[#64748B] focus:outline-none focus:border-[#0F172A] focus:ring-2 focus:ring-[#0F172A]/20 transition-all"
+            placeholder="Search ID, model, location"
+            autoComplete="off"
+            className="w-full min-h-[40px] bg-sunken border border-line rounded-lg pl-9 pr-10 text-[13px] text-ink placeholder:text-subtle hover:border-line-strong focus:outline-none focus:bg-panel focus:border-accent focus:ring-2 focus:ring-accent/15 transition-colors [&::-webkit-search-cancel-button]:hidden"
           />
+          {searchFilter && (
+            <button
+              type="button"
+              onClick={() => onSearchChange("")}
+              className="absolute right-0 top-0 min-w-[40px] min-h-[40px] flex items-center justify-center rounded-lg text-subtle hover:text-ink cursor-pointer"
+              aria-label="Clear fleet search"
+            >
+              <X className="w-4 h-4" aria-hidden="true" />
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Table Column Headers */}
-      <div className="grid grid-cols-[1.15fr_0.9fr_1.15fr_0.8fr] items-center px-4 py-2 bg-[#F8FAFC] border-b border-[#E2E8F0] text-[11px] font-bold tracking-wider text-[#475569] uppercase">
-        <span>ID / MODEL</span>
-        <span>LOCATION</span>
-        <span>STATUS</span>
-        <span className="text-right">HOURS</span>
-      </div>
+      <ul ref={listRef} onKeyDown={onListKey} className="flex-1 min-h-0 overflow-y-auto custom-scrollbar px-2 pb-3">
+        {groups.map((group) => (
+          <li key={group.id} className="mt-3 first:mt-0">
+            <h3 className="flex items-baseline justify-between px-2 pt-1 pb-1.5 text-[11px] font-semibold uppercase tracking-[0.06em] text-subtle">
+              {group.title}
+              <span className="tabular-nums">{group.items.length}</span>
+            </h3>
+            <ul>
+              {group.items.map((item) => {
+                const isSelected = item.machine_id === selectedId;
+                const status = statusMeta(item.status);
+                const isFault = item.status.toLowerCase() === "fault";
+                const isException = rank(item) < 2;
+                const isOverdue = item.operating_hours > OVERHAUL_THRESHOLD;
 
-      {/* Asset Rows List */}
-      <div className="flex-1 min-h-0 overflow-y-auto divide-y divide-[#F1F5F9] custom-scrollbar">
-        {filtered.map((item) => {
-          const isSelected = item.machine_id === selectedId;
-          const statusLower = item.status.toLowerCase();
-
-          // Dot & badge colors matching reference
-          const statusDot =
-            statusLower === "fault"
-              ? "bg-[#EF4444]"
-              : statusLower === "maintenance"
-              ? "bg-[#F59E0B]"
-              : "bg-[#22C55E]";
-
-          const statusLabel =
-            statusLower === "fault"
-              ? "Fault"
-              : statusLower === "maintenance"
-              ? "Maintenance"
-              : "Operational";
-
-          // Parse location into 2 lines if possible
-          const locationParts = item.location.split(" ");
-          const plantPart = locationParts.slice(0, 2).join(" ");
-          const cellPart = locationParts.slice(2).join(" ");
-
-          return (
-            <div
-              key={item.machine_id}
-              role="button"
-              tabIndex={0}
-              onClick={() => onSelect(item.machine_id)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  onSelect(item.machine_id);
-                }
-              }}
-              className={`grid grid-cols-[1.15fr_0.9fr_1.15fr_0.8fr] items-center px-4 py-3 cursor-pointer transition-colors text-[13px] focus-visible:outline-2 focus-visible:outline-[#0F172A] ${
-                isSelected
-                  ? "bg-[#FEF2F2] border-l-4 border-[#DC2626]"
-                  : "hover:bg-[#F8FAFC] border-l-4 border-transparent"
-              }`}
-            >
-              {/* ID & Model */}
-              <div className="min-w-0 pr-1">
-                <span className="block font-bold text-[13px] leading-tight text-[#0F172A]">
-                  {item.machine_id}
-                </span>
-                <span className="block text-[12px] text-[#475569] truncate mt-0.5" title={item.name}>
-                  {item.name}
-                </span>
-              </div>
-
-              {/* Location */}
-              <div className="min-w-0 pr-1 text-[12px] text-[#334155] leading-snug">
-                <span className="block truncate" title={item.location}>{plantPart || item.location}</span>
-                {cellPart && <span className="block text-[12px] text-[#475569] truncate">{cellPart}</span>}
-              </div>
-
-              {/* Status */}
-              <div className="flex items-center gap-1.5 min-w-0">
-                <span className={`w-3 h-3 rounded-full shrink-0 ring-1 ring-black/10 ${statusDot}`} aria-hidden="true" />
-                <span className="text-[12px] font-medium text-[#334155] truncate">
-                  {statusLabel}
-                </span>
-              </div>
-
-              {/* Hours & Chevron */}
-              <div className="flex items-center justify-end gap-1 text-right font-mono text-[12px] text-[#334155]">
-                <span>{item.operating_hours.toLocaleString()} h</span>
-                <ChevronRight className="w-4 h-4 text-[#64748B] shrink-0" aria-hidden="true" />
-              </div>
-            </div>
-          );
-        })}
+                return (
+                  <li key={item.machine_id}>
+                    <button
+                      type="button"
+                      onClick={() => onSelect(item.machine_id)}
+                      data-asset={item.machine_id}
+                      aria-pressed={isSelected}
+                      aria-label={`${item.name}, ${item.machine_id}, ${item.location}, ${status.label}, ${item.operating_hours.toLocaleString()} run hours${isOverdue ? ", service overdue" : ""}`}
+                      className={`w-full grid grid-cols-[minmax(0,1fr)_auto] gap-x-3 items-center min-h-[52px] px-2 py-2 text-left rounded-md cursor-pointer transition-colors focus-visible:outline-offset-[-2px] ${
+                        isSelected ? "bg-accent-bg shadow-[inset_3px_0_0_var(--color-accent)]" : "hover:bg-sunken"
+                      }`}
+                    >
+                      <span className="min-w-0">
+                        <span className={`block text-[14px] font-medium truncate ${isSelected ? "text-accent-ink" : "text-ink"}`}>
+                          {item.name}
+                        </span>
+                        <span className="block font-mono text-[12px] text-muted">{item.machine_id}</span>
+                      </span>
+                      <span className="flex flex-col items-end">
+                        {isException && (
+                          <span className={`flex items-center gap-1.5 text-[12px] font-medium ${isFault ? "text-danger" : "text-warn"}`}>
+                            <span className={`w-1.5 h-1.5 rounded-full ${status.dot}`} aria-hidden="true" />
+                            {status.label}
+                          </span>
+                        )}
+                        <span
+                          className={`text-[12px] tabular-nums ${isOverdue ? "text-warn" : "text-muted"}`}
+                          title={isOverdue ? `Past the ${OVERHAUL_THRESHOLD.toLocaleString()} h service interval` : "Run hours"}
+                        >
+                          {item.operating_hours.toLocaleString()} h
+                        </span>
+                      </span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          </li>
+        ))}
 
         {filtered.length === 0 && (
-          <div className="p-8 text-center text-[13px] text-[#475569]" role="status">
-            No equipment matching filter.
-          </div>
+          <li className="px-6 py-10 text-center" role="status">
+            <p className="text-[13px] font-medium text-ink">No assets match "{searchFilter.trim()}".</p>
+            <p className="text-[12px] text-muted mt-1">Search by asset ID, model name, or location.</p>
+            <button
+              type="button"
+              onClick={() => onSearchChange("")}
+              className="mt-3 min-h-[40px] px-4 rounded-lg border border-line-strong text-[13px] font-medium text-ink hover:bg-sunken cursor-pointer"
+            >
+              Clear search
+            </button>
+          </li>
         )}
-      </div>
+      </ul>
     </aside>
   );
 }

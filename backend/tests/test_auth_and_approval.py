@@ -134,3 +134,23 @@ def test_sqlite_checkpoint_persistence_across_app_recreation():
     alarm = repo.get_alarm_by_id("ALM-001")
     assert alarm["status"] == "acknowledged"
     assert alarm["acknowledged_by"] == "supervisor1"
+
+def test_requester_cannot_approve_own_action():
+    client.cookies.clear()
+    sup_login = client.post("/api/v1/auth/login", json={"username": "supervisor1", "password": "SupervisorPass123!"})
+    sup_cookies = sup_login.cookies
+    session_id = f"test-self-approve-{uuid.uuid4().hex[:6]}"
+    chat_resp = client.post(
+        "/api/chat",
+        json={"message": "Please create work order for EQ-1000 for critical spindle bearing overheating", "session_id": session_id},
+        cookies=sup_cookies
+    )
+    assert chat_resp.json()["status"] == "approval_required"
+    action_id = chat_resp.json()["pending_action"]["action_id"]
+
+    approve_resp = client.post(f"/api/v1/actions/{action_id}/approve", cookies=sup_cookies)
+    assert approve_resp.status_code == 403
+    assert "another supervisor" in approve_resp.json()["detail"].lower()
+
+    reject_resp = client.post(f"/api/v1/actions/{action_id}/reject", json={"reason": "self"}, cookies=sup_cookies)
+    assert reject_resp.status_code == 403

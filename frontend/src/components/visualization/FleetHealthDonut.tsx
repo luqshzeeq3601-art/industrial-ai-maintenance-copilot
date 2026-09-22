@@ -1,210 +1,98 @@
-import { useState } from "react";
-import { Activity } from "lucide-react";
-
-interface StatusDistribution {
-  operational?: number;
-  maintenance?: number;
-  fault?: number;
-  offline?: number;
-  [key: string]: number | undefined;
-}
+import type { AndonFilter } from "./AndonStrip";
 
 interface FleetHealthDonutProps {
-  distribution: StatusDistribution;
+  distribution: Record<string, number>;
   totalUnits: number;
-  uptimePercentage: number;
-  selectedStatus?: string | null;
-  onSelectStatus?: (status: string | null) => void;
+  selected: AndonFilter;
+  onSelect: (filter: AndonFilter) => void;
 }
 
-interface Segment {
-  key: string;
-  label: string;
-  count: number;
-  color: string;
-  bgColor: string;
-  textColor: string;
-  borderColor: string;
-}
+const SEGMENTS: { key: Exclude<AndonFilter, "all">; label: string; color: string }[] = [
+  { key: "operational", label: "Running", color: "var(--color-status-ok)" },
+  { key: "maintenance", label: "Maintenance", color: "var(--color-status-maint)" },
+  { key: "fault", label: "Fault", color: "var(--color-status-fault)" }
+];
 
-export function FleetHealthDonut({
-  distribution,
-  totalUnits,
-  uptimePercentage,
-  selectedStatus,
-  onSelectStatus
-}: FleetHealthDonutProps) {
-  const [hoveredKey, setHoveredKey] = useState<string | null>(null);
-
-  const segments: Segment[] = [
-    {
-      key: "operational",
-      label: "Operational",
-      count: distribution.operational || 0,
-      color: "#346538",
-      bgColor: "bg-[#EDF3EC]",
-      textColor: "text-[#346538]",
-      borderColor: "border-[#346538]/30"
-    },
-    {
-      key: "maintenance",
-      label: "Maintenance",
-      count: distribution.maintenance || 0,
-      color: "#956400",
-      bgColor: "bg-[#FBF3DB]",
-      textColor: "text-[#956400]",
-      borderColor: "border-[#956400]/30"
-    },
-    {
-      key: "fault",
-      label: "Fault Alarm",
-      count: distribution.fault || 0,
-      color: "#9F2F2D",
-      bgColor: "bg-[#FDEBEC]",
-      textColor: "text-[#9F2F2D]",
-      borderColor: "border-[#9F2F2D]/30"
-    }
-  ];
-
-  // SVG circle calculation
-  const size = 180;
-  const strokeWidth = 24;
-  const radius = (size - strokeWidth) / 2;
-  const circumference = 2 * Math.PI * radius;
-
-  let accumulatedPercent = 0;
+/** Share of the fleet in each state; legend entries filter the Andon board. */
+export function FleetHealthDonut({ distribution, totalUnits, selected, onSelect }: FleetHealthDonutProps) {
+  const size = 148;
+  const stroke = 16;
+  const r = (size - stroke) / 2;
+  const c = 2 * Math.PI * r;
+  const gap = totalUnits > 1 ? 3 : 0;
+  let offset = 0;
 
   return (
-    <div className="h-full bg-[#FFFFFF] border border-[#EAEAEA] rounded-[var(--radius-outer)] p-5 shadow-[var(--shadow-tinted-sm)] flex flex-col justify-between">
-      {/* Header */}
-      <div className="flex items-center justify-between border-b border-[#EAEAEA] pb-2.5 mb-4">
-        <div className="flex items-center gap-2">
-          <Activity className="w-4 h-4 text-[#64748B]" strokeWidth={2.2} />
-          <h3 className="text-[10.5px] uppercase tracking-[0.08em] font-semibold font-mono text-[#64748B]">
-            Health record — fleet & uptime
-          </h3>
-        </div>
-        <span className="text-[11px] font-mono tabular-nums text-[#787774]">
-          Live plant status
-        </span>
-      </div>
+    <section aria-labelledby="fleet-health-heading" className="h-full flex flex-col bg-panel border border-line rounded-xl shadow-[var(--shadow-tinted-xs)] p-5">
+      <h2 id="fleet-health-heading" className="text-[16px] font-semibold text-ink">Fleet health</h2>
 
-      {/* Donut & Legend Container */}
-      <div className="flex flex-col sm:flex-row items-center justify-around gap-4 py-1">
-        {/* SVG Donut */}
-        <div className="relative w-[180px] h-[180px] flex items-center justify-center">
-          <svg width={size} height={size} className="rotate-[-90deg]">
-            {/* Background Track Circle */}
-            <circle
-              cx={size / 2}
-              cy={size / 2}
-              r={radius}
-              stroke="#F4F4F2"
-              strokeWidth={strokeWidth}
-              fill="transparent"
-            />
-
-            {/* Segments */}
+      <div className="flex-1 mt-5 flex flex-col sm:flex-row lg:flex-col 2xl:flex-row items-center justify-center gap-6">
+        <div className="relative shrink-0" style={{ width: size, height: size }}>
+          <svg width={size} height={size} className="-rotate-90" aria-hidden="true">
+            <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--color-wash)" strokeWidth={stroke} />
             {totalUnits > 0 &&
-              segments.map((seg) => {
-                if (seg.count === 0) return null;
-                const percent = seg.count / totalUnits;
-                const dashLength = circumference * percent;
-                const dashOffset = -circumference * accumulatedPercent;
-                accumulatedPercent += percent;
-
-                const isHovered = hoveredKey === seg.key;
-                const isSelected = selectedStatus === seg.key;
-
-                return (
+              SEGMENTS.map((seg) => {
+                const n = distribution[seg.key] || 0;
+                if (!n) return null;
+                const len = (n / totalUnits) * c;
+                const dash = Math.max(len - gap, 0);
+                const el = (
                   <circle
                     key={seg.key}
                     cx={size / 2}
                     cy={size / 2}
-                    r={radius}
+                    r={r}
+                    fill="none"
                     stroke={seg.color}
-                    strokeWidth={isHovered || isSelected ? strokeWidth + 4 : strokeWidth}
-                    strokeDasharray={`${dashLength} ${circumference - dashLength}`}
-                    strokeDashoffset={dashOffset}
-                    fill="transparent"
-                    className="transition-all duration-300 cursor-pointer"
-                    onMouseEnter={() => setHoveredKey(seg.key)}
-                    onMouseLeave={() => setHoveredKey(null)}
-                    onClick={() =>
-                      onSelectStatus && onSelectStatus(selectedStatus === seg.key ? null : seg.key)
-                    }
+                    strokeWidth={stroke}
+                    strokeDasharray={`${dash} ${c - dash}`}
+                    strokeDashoffset={-offset}
+                    opacity={selected === "all" || selected === seg.key ? 1 : 0.3}
                   />
                 );
+                offset += len;
+                return el;
               })}
           </svg>
-
-          {/* Donut Center Telemetry Readout */}
-          <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center">
-            <span className="text-2xl font-bold font-mono tracking-tight text-[#111111]">
-              {uptimePercentage}%
-            </span>
-            <span className="text-[10px] text-[#787774] uppercase tracking-wider font-semibold">
-              Plant Uptime
-            </span>
+          <div className="absolute inset-0 flex flex-col items-center justify-center">
+            <span className="text-[26px] font-semibold text-ink tabular-nums leading-none">{totalUnits}</span>
+            <span className="text-[13px] text-muted mt-1">units</span>
           </div>
         </div>
 
-        {/* Legend & Breakdown Pills */}
-        <div className="flex flex-col gap-2 w-full sm:w-auto min-w-[140px]">
-          {segments.map((seg) => {
-            const isHovered = hoveredKey === seg.key;
-            const isSelected = selectedStatus === seg.key;
-            const pct = totalUnits > 0 ? Math.round((seg.count / totalUnits) * 100) : 0;
-
+        <ul className="w-full min-w-0 space-y-1">
+          {SEGMENTS.map((seg) => {
+            const n = distribution[seg.key] || 0;
+            const pct = totalUnits ? Math.round((n / totalUnits) * 100) : 0;
+            const on = selected === seg.key;
             return (
-              <button
-                key={seg.key}
-                type="button"
-                onMouseEnter={() => setHoveredKey(seg.key)}
-                onMouseLeave={() => setHoveredKey(null)}
-                onClick={() =>
-                  onSelectStatus && onSelectStatus(selectedStatus === seg.key ? null : seg.key)
-                }
-                className={`flex items-center justify-between p-2 rounded-md border text-left transition-all ${
-                  isSelected
-                    ? "border-[#111111] bg-[#F7F6F3]"
-                    : isHovered
-                    ? "border-[#CCCCCC] bg-[#FBFBFA]"
-                    : "border-transparent bg-[#FBFBFA]"
-                }`}
-              >
-                <div className="flex items-center gap-2">
-                  <span
-                    className="w-2.5 h-2.5 rounded-full"
-                    style={{ backgroundColor: seg.color }}
-                  />
-                  <span className="text-xs font-medium text-[#111111]">
-                    {seg.label}
-                  </span>
-                </div>
-
-                <div className="flex items-center gap-1.5 font-mono text-xs">
-                  <span className="font-semibold text-[#111111]">{seg.count}</span>
-                  <span className="text-[10.5px] text-[#787774]">({pct}%)</span>
-                </div>
-              </button>
+              <li key={seg.key}>
+                <button
+                  type="button"
+                  onClick={() => onSelect(on ? "all" : seg.key)}
+                  aria-pressed={on}
+                  title={on ? "Show all assets" : `Show ${seg.label.toLowerCase()} assets on the board`}
+                  className={`w-full flex items-center gap-3 min-h-[40px] px-2.5 rounded-lg text-[14px] text-left transition-colors cursor-pointer ${
+                    on ? "bg-sunken" : "hover:bg-sunken"
+                  }`}
+                >
+                  <span className="w-3 h-3 rounded-full shrink-0" style={{ background: seg.color }} aria-hidden="true" />
+                  <span className="flex-1 min-w-0 truncate text-body">{seg.label}</span>
+                  <span className="font-semibold text-ink tabular-nums">{n}</span>
+                  <span className="w-10 shrink-0 text-right text-muted tabular-nums">{pct}%</span>
+                </button>
+              </li>
             );
           })}
-        </div>
+        </ul>
       </div>
 
-      {/* Footer Info */}
-      <div className="mt-3 pt-2 border-t border-[#EAEAEA] flex items-center justify-between text-[11px] text-[#787774] font-mono">
-        <span>Total Fleet Units: {totalUnits}</span>
-        {selectedStatus && (
-          <button
-            onClick={() => onSelectStatus && onSelectStatus(null)}
-            className="text-[#111111] underline hover:text-[#787774]"
-          >
-            Clear Filter
-          </button>
-        )}
+      <div className="mt-4 pt-3 border-t border-line flex items-center justify-between text-[13px]">
+        <span className="text-muted">Availability</span>
+        <span className="font-semibold text-ink tabular-nums">
+          {totalUnits ? Math.round(((distribution.operational || 0) / totalUnits) * 100) : 0}%
+        </span>
       </div>
-    </div>
+    </section>
   );
 }

@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { HardDrive, AlertTriangle } from "lucide-react";
+import { TriangleAlert } from "lucide-react";
+import { OVERHAUL_THRESHOLD } from "../workspace/types";
 
 export interface EquipmentData {
   machine_id: string;
@@ -17,134 +18,102 @@ interface OperatingHoursBarChartProps {
   selectedMachineId?: string;
 }
 
-export function OperatingHoursBarChart({
-  equipment,
-  onSelectEquipment,
-  selectedMachineId
-}: OperatingHoursBarChartProps) {
-  const [hoveredId, setHoveredId] = useState<string | null>(null);
+const TOP_N = 5;
 
-  // Service interval threshold constant (e.g. 10,000 hours for standard industrial overhaul)
-  const OVERHAUL_THRESHOLD = 10000;
-  const maxHours = Math.max(...equipment.map((e) => e.operating_hours), OVERHAUL_THRESHOLD);
+const CRITICALITY: Record<string, string> = {
+  critical: "bg-danger-bg text-danger-ink",
+  high: "bg-warn-bg text-warn-ink",
+  medium: "bg-accent-bg text-accent-ink",
+  low: "bg-wash text-body"
+};
 
-  const getCriticalityBadge = (crit: string) => {
-    switch (crit.toLowerCase()) {
-      case "critical":
-        return { text: "text-[#9F2F2D]", bg: "bg-[#FDEBEC]", border: "border-[#9F2F2D]/30" };
-      case "high":
-        return { text: "text-[#956400]", bg: "bg-[#FBF3DB]", border: "border-[#956400]/30" };
-      default:
-        return { text: "text-[#787774]", bg: "bg-[#F4F4F2]", border: "border-[#EAEAEA]" };
-    }
-  };
+/** Hours inside the service interval: neutral, amber in the last 20%. Hours past it are drawn red separately. */
+function wearBar(hours: number): string {
+  return hours >= OVERHAUL_THRESHOLD * 0.8 && hours <= OVERHAUL_THRESHOLD ? "bg-status-maint" : "bg-subtle";
+}
+
+/** Assets ranked by operating hours, with criticality, so the next service candidates stand out. */
+export function OperatingHoursBarChart({ equipment, onSelectEquipment, selectedMachineId }: OperatingHoursBarChartProps) {
+  const [showAll, setShowAll] = useState(false);
+  const ranked = [...equipment].sort((a, b) => b.operating_hours - a.operating_hours);
+  const rows = showAll ? ranked : ranked.slice(0, TOP_N);
+  const max = Math.max(OVERHAUL_THRESHOLD, ...ranked.map((e) => e.operating_hours));
+  const limitPct = (OVERHAUL_THRESHOLD / max) * 100;
+  const overdue = ranked.filter((e) => e.operating_hours > OVERHAUL_THRESHOLD).length;
 
   return (
-    <div className="bg-[#FFFFFF] border border-[#EAEAEA] rounded-[var(--radius-outer)] p-5 shadow-[var(--shadow-tinted-sm)] flex flex-col justify-between">
-      {/* Header */}
-      <div className="flex items-center justify-between border-b border-[#EAEAEA] pb-2.5 mb-3">
-        <div className="flex items-center gap-2">
-          <HardDrive className="w-4 h-4 text-[#64748B]" strokeWidth={2.2} />
-          <h3 className="text-[10.5px] uppercase tracking-[0.08em] font-semibold font-mono text-[#64748B]">
-            Hours ledger — operating hours & wear
-          </h3>
+    <section aria-labelledby="hours-wear-heading" className="h-full flex flex-col bg-panel border border-line rounded-xl shadow-[var(--shadow-tinted-xs)] p-5">
+      <div className="flex items-baseline justify-between gap-3">
+        <h2 id="hours-wear-heading" className="text-[16px] font-semibold text-ink">Operating hours &amp; wear</h2>
+        <span className="text-[13px] text-muted">{showAll ? "All assets" : "Top assets by hours"}</span>
+      </div>
+      <p className={`inline-flex items-center gap-1.5 text-[13px] mt-1 ${overdue ? "text-danger" : "text-muted"}`}>
+        {overdue > 0 && <TriangleAlert className="w-4 h-4 shrink-0" aria-hidden="true" />}
+        {overdue > 0
+          ? `${overdue} overdue · ${OVERHAUL_THRESHOLD.toLocaleString()} h limit`
+          : `Within ${OVERHAUL_THRESHOLD.toLocaleString()} h limit`}
+      </p>
+
+      {rows.length === 0 ? (
+        <p className="flex-1 mt-4 text-[13px] text-muted">No assets to rank yet.</p>
+      ) : (
+        <ol className={`flex-1 mt-3 -mx-2 ${showAll ? "max-h-[360px] overflow-y-auto custom-scrollbar" : ""}`}>
+          {rows.map((eq) => {
+            const crit = eq.criticality.toLowerCase();
+            const selected = eq.machine_id === selectedMachineId;
+            return (
+              <li key={eq.machine_id}>
+                <button
+                  type="button"
+                  onClick={() => onSelectEquipment?.(eq.machine_id)}
+                  disabled={!onSelectEquipment}
+                  aria-label={`${eq.machine_id} ${eq.name}, ${eq.operating_hours.toLocaleString()} hours, ${crit} criticality. Open asset.`}
+                  className={`w-full px-2 py-2 rounded-lg text-left transition-colors cursor-pointer disabled:cursor-default hover:bg-sunken ${
+                    selected ? "bg-sunken" : ""
+                  }`}
+                >
+                  <span className="flex items-center gap-2 text-[14px]">
+                    <span className="font-mono font-semibold text-ink shrink-0">{eq.machine_id}</span>
+                    <span className="text-muted truncate">{eq.name}</span>
+                    <span className={`ml-auto shrink-0 inline-flex h-6 items-center px-2 rounded-md text-[12px] font-medium capitalize ${CRITICALITY[crit] ?? CRITICALITY.low}`}>
+                      {crit}
+                    </span>
+                    <span className="w-[76px] shrink-0 text-right font-semibold text-ink tabular-nums">
+                      {eq.operating_hours.toLocaleString()} h
+                    </span>
+                  </span>
+                  <span className="relative mt-1.5 block h-1.5 rounded-full bg-wash" aria-hidden="true">
+                    <span
+                      className={`absolute inset-y-0 left-0 rounded-l-full ${wearBar(eq.operating_hours)} ${eq.operating_hours > OVERHAUL_THRESHOLD ? "" : "rounded-r-full"}`}
+                      style={{ width: `${(Math.min(eq.operating_hours, OVERHAUL_THRESHOLD) / max) * 100}%` }}
+                    />
+                    {eq.operating_hours > OVERHAUL_THRESHOLD && (
+                      <span
+                        className="absolute inset-y-0 rounded-r-full bg-status-fault"
+                        style={{ left: `${limitPct}%`, width: `${((eq.operating_hours - OVERHAUL_THRESHOLD) / max) * 100}%` }}
+                      />
+                    )}
+                    <span className="absolute -inset-y-0.5 w-0.5 rounded-full bg-ink" style={{ left: `calc(${limitPct}% - 1px)` }} />
+                  </span>
+                </button>
+              </li>
+            );
+          })}
+        </ol>
+      )}
+
+      {ranked.length > TOP_N && (
+        <div className="mt-3 pt-3 border-t border-line flex justify-end text-[13px]">
+          <button
+            type="button"
+            onClick={() => setShowAll((v) => !v)}
+            aria-expanded={showAll}
+            className="min-h-[32px] font-medium text-accent hover:underline cursor-pointer"
+          >
+            {showAll ? "Show top 5" : `Show all ${ranked.length}`}
+          </button>
         </div>
-        <div className="flex items-center gap-2 text-[10.5px] font-mono text-[#787774]">
-          <span className="flex items-center gap-1">
-            <span className="w-2 h-2 rounded bg-[#346538]"></span>
-            &lt; 8k hrs
-          </span>
-          <span className="flex items-center gap-1">
-            <span className="w-2 h-2 rounded bg-[#956400]"></span>
-            8k-10k hrs
-          </span>
-          <span className="flex items-center gap-1">
-            <span className="w-2 h-2 rounded bg-[#9F2F2D]"></span>
-            &gt; 10k hrs (Overhaul)
-          </span>
-        </div>
-      </div>
-
-      {/* Bar List */}
-      <div className="space-y-2.5 overflow-y-auto max-h-[340px] pr-1 custom-scrollbar">
-        {equipment.map((eq) => {
-          const percent = Math.min(Math.round((eq.operating_hours / maxHours) * 100), 100);
-          const isOverhaulNeeded = eq.operating_hours >= OVERHAUL_THRESHOLD;
-          const isApproaching = eq.operating_hours >= 8000 && !isOverhaulNeeded;
-
-          const barColor = isOverhaulNeeded
-            ? "bg-[#9F2F2D]"
-            : isApproaching
-            ? "bg-[#956400]"
-            : "bg-[#111111]";
-
-          const critBadge = getCriticalityBadge(eq.criticality);
-          const isSelected = selectedMachineId === eq.machine_id;
-          const isHovered = hoveredId === eq.machine_id;
-
-          return (
-            <button
-              key={eq.machine_id}
-              type="button"
-              onClick={() => onSelectEquipment && onSelectEquipment(eq.machine_id)}
-              onMouseEnter={() => setHoveredId(eq.machine_id)}
-              onMouseLeave={() => setHoveredId(null)}
-              className={`w-full text-left p-2 rounded-md border transition-all flex flex-col gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#111111] ${
-                isSelected
-                  ? "border-[#111111] bg-[#F7F6F3]"
-                  : isHovered
-                  ? "border-[#CCCCCC] bg-[#FBFBFA]"
-                  : "border-[#EAEAEA] bg-[#FFFFFF]"
-              }`}
-            >
-              {/* Row Header */}
-              <div className="flex items-center justify-between text-xs">
-                <div className="flex items-center gap-2">
-                  <span className="font-semibold text-[#111111] font-mono">
-                    {eq.machine_id}
-                  </span>
-                  <span className="text-[#787774] truncate max-w-[160px] sm:max-w-[220px]">
-                    {eq.name}
-                  </span>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <span
-                    className={`px-1.5 py-0.5 rounded-[4px] text-[10px] uppercase tracking-[0.06em] font-semibold font-mono border ${critBadge.bg} ${critBadge.text} ${critBadge.border}`}
-                  >
-                    {eq.criticality}
-                  </span>
-                  <span className="font-mono text-xs font-semibold text-[#111111]">
-                    {eq.operating_hours.toLocaleString()} hrs
-                  </span>
-                </div>
-              </div>
-
-              {/* Progress Bar with Service Threshold Line */}
-              <div className="relative w-full h-2 rounded bg-[#F4F4F2] overflow-hidden">
-                <div
-                  className={`h-full transition-all duration-500 rounded ${barColor}`}
-                  style={{ width: `${percent}%` }}
-                />
-              </div>
-
-              {/* Status Warning if Overhaul threshold exceeded */}
-              {isOverhaulNeeded && (
-                <div className="flex items-center gap-1 text-[10.5px] text-[#9F2F2D] font-mono">
-                  <AlertTriangle className="w-3 h-3" />
-                  <span>Service window exceeded (+{(eq.operating_hours - OVERHAUL_THRESHOLD).toLocaleString()} hrs)</span>
-                </div>
-              )}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Threshold Metric Footer */}
-      <div className="mt-3 pt-2 border-t border-[#EAEAEA] flex items-center justify-between text-[11px] text-[#787774] font-mono">
-        <span>Preventive Service Standard: 10,000 hrs</span>
-        <span>Click row to view work order timeline</span>
-      </div>
-    </div>
+      )}
+    </section>
   );
 }

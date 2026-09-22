@@ -1,176 +1,161 @@
 import { useState } from "react";
-import { Radio, Wrench, CheckCircle2, SlidersHorizontal, ChevronRight } from "lucide-react";
+import { ChevronRight, Search, X } from "lucide-react";
 import type { EquipmentData } from "./OperatingHoursBarChart";
+import { MachineThumbnail3D } from "./MachineThumbnail3D";
+
+export type AndonFilter = "all" | "fault" | "maintenance" | "operational";
 
 interface AndonStripProps {
   equipment: EquipmentData[];
   selectedId?: string;
   onSelect: (machineId: string) => void;
+  filter: AndonFilter;
+  onFilterChange: (filter: AndonFilter) => void;
 }
 
-type StatusFilter = "all" | "operational" | "maintenance" | "fault";
+const FILTERS: { id: AndonFilter; label: string; dot?: string }[] = [
+  { id: "all", label: "All" },
+  { id: "fault", label: "Fault", dot: "bg-status-fault" },
+  { id: "maintenance", label: "Maintenance", dot: "bg-status-maint" },
+  { id: "operational", label: "Running", dot: "bg-status-ok" }
+];
 
-export function AndonStrip({ equipment, selectedId, onSelect }: AndonStripProps) {
-  const [filter, setFilter] = useState<StatusFilter>("all");
+const BADGE: Record<string, { label: string; text: string; dot: string; edge: string }> = {
+  fault: { label: "Fault", text: "text-danger", dot: "bg-status-fault", edge: "border-l-status-fault" },
+  maintenance: { label: "Maintenance", text: "text-warn", dot: "bg-status-maint", edge: "border-l-status-maint" },
+  operational: { label: "Running", text: "text-muted", dot: "bg-status-ok", edge: "border-l-line" }
+};
 
-  const faultCount = equipment.filter((e) => e.status.toLowerCase() === "fault").length;
-  const maintCount = equipment.filter((e) => e.status.toLowerCase() === "maintenance").length;
-  const operCount = equipment.filter((e) => e.status.toLowerCase() === "operational").length;
+/** "Plant A Cell 1" → "Plant A, Cell 1"; other formats pass through. */
+function formatLocation(loc: string): string {
+  const m = loc.match(/^(Plant\s+\S+)\s+(.+)$/i);
+  return m ? `${m[1]}, ${m[2]}` : loc;
+}
 
-  const filteredEquipment = equipment.filter((eq) => {
-    if (filter === "all") return true;
-    return eq.status.toLowerCase() === filter;
-  });
+/** Shop-floor Andon board: one tile per asset; faults and maintenance carry a coloured edge. */
+export function AndonStrip({ equipment, selectedId, onSelect, filter, onFilterChange }: AndonStripProps) {
+  const [query, setQuery] = useState("");
+  const count = (id: AndonFilter) =>
+    id === "all" ? equipment.length : equipment.filter((e) => e.status.toLowerCase() === id).length;
+
+  const q = query.trim().toLowerCase();
+  const visible = equipment.filter(
+    (e) =>
+      (filter === "all" || e.status.toLowerCase() === filter) &&
+      (!q || `${e.machine_id} ${e.name} ${e.location} ${e.type}`.toLowerCase().includes(q))
+  );
 
   return (
-    <div className="w-full">
-      {/* Andon Header & Filter Controls */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#DFE6ED] pb-3 mb-3">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-[#1B2A3A] text-white flex items-center justify-center shrink-0 shadow-sm">
-            <Radio className="w-4 h-4 text-[#22C55E] animate-pulse" strokeWidth={2.2} />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h3 className="text-[13px] font-bold tracking-tight text-[#16202B]">
-                Shop Floor Andon Board
-              </h3>
-              <span className="px-1.5 py-0.2 rounded text-[10px] font-bold font-mono tracking-wide bg-[#EDF1F5] text-[#33465A]">
-                LIVE FEED
-              </span>
-            </div>
-            <p className="text-[11.5px] text-[#64748B]">
-              Real-time line status across {equipment.length} plant machinery cells
-            </p>
-          </div>
+    <section aria-labelledby="andon-heading" className="bg-panel border border-line rounded-xl shadow-[var(--shadow-tinted-xs)] p-5">
+      <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+        <div className="mr-auto flex items-baseline gap-2.5">
+          <h2 id="andon-heading" className="text-[16px] font-semibold text-ink">Andon board</h2>
+          <span className="text-[13px] text-muted tabular-nums">{equipment.length} assets</span>
         </div>
 
-        {/* Status Filter Buttons */}
-        <div className="flex items-center gap-1.5 overflow-x-auto custom-scrollbar pb-1 sm:pb-0">
-          <button
-            type="button"
-            onClick={() => setFilter("all")}
-            className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11.5px] font-semibold transition-all cursor-pointer ${
-              filter === "all"
-                ? "bg-[#1B2A3A] text-white shadow-sm"
-                : "bg-[#F4F6F9] text-[#64748B] hover:text-[#16202B] hover:bg-[#EAEFF5]"
-            }`}
-          >
-            <SlidersHorizontal className="w-3 h-3" />
-            <span>All ({equipment.length})</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setFilter("fault")}
-            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11.5px] font-semibold transition-all cursor-pointer ${
-              filter === "fault"
-                ? "bg-[#D92D20] text-white shadow-sm"
-                : "bg-[#FCECEA] text-[#D92D20] hover:bg-[#FADFDC]"
-            }`}
-          >
-            <span className="w-2 h-2 rounded-full bg-[#D92D20] animate-pulse-alarm" />
-            <span>Alarms ({faultCount})</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setFilter("maintenance")}
-            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11.5px] font-semibold transition-all cursor-pointer ${
-              filter === "maintenance"
-                ? "bg-[#D97706] text-white shadow-sm"
-                : "bg-[#FEF3C7] text-[#B45309] hover:bg-[#FDE68A]"
-            }`}
-          >
-            <span className="w-2 h-2 rounded-full bg-[#D97706] animate-pulse-amber" />
-            <span>Service ({maintCount})</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setFilter("operational")}
-            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11.5px] font-semibold transition-all cursor-pointer ${
-              filter === "operational"
-                ? "bg-[#16A34A] text-white shadow-sm"
-                : "bg-[#DCFCE7] text-[#15803D] hover:bg-[#BBF7D0]"
-            }`}
-          >
-            <span className="w-2 h-2 rounded-full bg-[#16A34A]" />
-            <span>Running ({operCount})</span>
-          </button>
+        <div role="radiogroup" aria-label="Show assets by status" className="flex flex-wrap gap-2">
+          {FILTERS.map(({ id, label, dot }) => {
+            const on = filter === id;
+            return (
+              <button
+                key={id}
+                type="button"
+                role="radio"
+                aria-checked={on}
+                onClick={() => onFilterChange(id)}
+                className={`inline-flex items-center gap-2 min-h-[36px] pointer-coarse:min-h-[44px] px-3 rounded-md border text-[13px] font-medium transition-colors cursor-pointer ${
+                  on ? "bg-accent-bg text-accent-ink border-accent-line" : "bg-panel text-body border-line hover:bg-sunken"
+                }`}
+              >
+                {dot && <span className={`w-2 h-2 rounded-full ${dot}`} aria-hidden="true" />}
+                {label}
+                <span className={`tabular-nums ${on ? "" : "text-muted"}`}>{count(id)}</span>
+              </button>
+            );
+          })}
         </div>
-      </div>
 
-      {/* Andon Cells Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2.5">
-        {filteredEquipment.map((eq) => {
-          const isSelected = selectedId === eq.machine_id;
-          const status = eq.status.toLowerCase();
-          const isFault = status === "fault";
-          const isMaint = status === "maintenance";
-          const isOper = status === "operational";
-
-          return (
+        <div className="relative w-full sm:w-[220px]">
+          <label htmlFor="andon-search" className="sr-only">Search equipment</label>
+          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-subtle pointer-events-none" aria-hidden="true" />
+          <input
+            id="andon-search"
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search equipment"
+            autoComplete="off"
+            className="w-full min-h-[36px] pointer-coarse:min-h-[44px] pl-9 pr-9 rounded-md bg-sunken border border-line text-[13px] text-ink placeholder:text-subtle focus:bg-panel focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/15 [&::-webkit-search-cancel-button]:hidden"
+          />
+          {query && (
             <button
-              key={eq.machine_id}
               type="button"
-              onClick={() => onSelect(eq.machine_id)}
-              aria-selected={isSelected}
-              className={`group relative text-left p-3 rounded-xl border transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1B2A3A] active:scale-[0.98] cursor-pointer ${
-                isSelected
-                  ? "bg-[#FFFFFF] border-[#1B2A3A] shadow-[0_0_0_2px_#1B2A3A,0_2px_8px_rgba(27,42,58,0.12)]"
-                  : isFault
-                  ? "bg-[#FFF8F7] border-[#F3C2BD] hover:border-[#D92D20] shadow-[0_1px_3px_rgba(217,45,32,0.08)]"
-                  : isMaint
-                  ? "bg-[#FFFBF2] border-[#FDE68A] hover:border-[#D97706] shadow-[0_1px_3px_rgba(217,119,6,0.06)]"
-                  : "bg-[#FFFFFF] border-[#DFE6ED] hover:border-[#94A3B8] shadow-[0_1px_2px_rgba(22,32,43,0.04)]"
-              }`}
+              onClick={() => setQuery("")}
+              aria-label="Clear search"
+              className="absolute right-0.5 top-1/2 -translate-y-1/2 w-9 h-9 flex items-center justify-center rounded-md text-subtle hover:text-ink cursor-pointer"
             >
-              {/* Top Row: Machine ID and Status Beacon */}
-              <div className="flex items-center justify-between gap-1.5 mb-1.5">
-                <span className="font-mono text-[12.5px] font-bold text-[#16202B] tracking-tight">
-                  {eq.machine_id}
-                </span>
-
-                <div className="flex items-center gap-1.5">
-                  {isFault && (
-                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold tracking-wide bg-[#D92D20] text-white">
-                      <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
-                      ALARM
-                    </span>
-                  )}
-                  {isMaint && (
-                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold tracking-wide bg-[#D97706] text-white">
-                      <Wrench className="w-2.5 h-2.5" />
-                      MAINT
-                    </span>
-                  )}
-                  {isOper && (
-                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold tracking-wide bg-[#DCFCE7] text-[#15803D]">
-                      <CheckCircle2 className="w-2.5 h-2.5" />
-                      OK
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              {/* Machine Name */}
-              <p className="text-[12px] font-medium text-[#33465A] truncate mb-2 group-hover:text-[#16202B]">
-                {eq.name}
-              </p>
-
-              {/* Bottom Row: Location & Hours */}
-              <div className="flex items-center justify-between text-[11px] text-[#64748B] pt-1.5 border-t border-[#DFE6ED]/60 font-mono tabular-nums">
-                <span className="truncate max-w-[95px]">{eq.location}</span>
-                <span className="font-semibold text-[#16202B] flex items-center gap-0.5">
-                  {eq.operating_hours.toLocaleString()}h
-                  <ChevronRight className="w-3 h-3 text-[#94A3B8] opacity-0 group-hover:opacity-100 transition-opacity" />
-                </span>
-              </div>
+              <X className="w-4 h-4" aria-hidden="true" />
             </button>
-          );
-        })}
+          )}
+        </div>
       </div>
-    </div>
+
+      {visible.length === 0 ? (
+        <div className="mt-5 py-10 text-center" role="status">
+          <p className="text-[14px] font-medium text-ink">No assets match this view.</p>
+          <p className="text-[13px] text-muted mt-1">Try another status or clear the search to see the whole fleet.</p>
+          <button
+            type="button"
+            onClick={() => {
+              setQuery("");
+              onFilterChange("all");
+            }}
+            className="mt-3 min-h-[36px] px-4 rounded-md border border-line-strong text-[13px] font-medium text-ink hover:bg-sunken cursor-pointer"
+          >
+            Show all assets
+          </button>
+        </div>
+      ) : (
+        <ul className="mt-4 grid grid-cols-[repeat(auto-fill,minmax(min(100%,252px),1fr))] gap-2.5">
+          {visible.map((eq) => {
+            const badge = BADGE[eq.status.toLowerCase()] ?? { label: eq.status, text: "text-muted", dot: "bg-faint", edge: "border-l-line" };
+            const selected = eq.machine_id === selectedId;
+            return (
+              <li key={eq.machine_id}>
+                <button
+                  type="button"
+                  onClick={() => onSelect(eq.machine_id)}
+                  aria-label={`${eq.machine_id} ${eq.name}, ${badge.label}, ${eq.location}, ${eq.operating_hours.toLocaleString()} hours. Open asset.`}
+                  className={`group w-full h-full block p-3 rounded-md border border-l-[3px] ${badge.edge} bg-panel text-left transition-colors cursor-pointer hover:bg-sunken ${
+                    selected ? "border-accent ring-2 ring-accent/20" : "border-line"
+                  }`}
+                >
+                  <span className="flex items-start gap-2.5">
+                    <span className="w-14 h-14 shrink-0 rounded-md border border-line bg-sunken flex items-center justify-center" aria-hidden="true">
+                      <MachineThumbnail3D name={eq.name} type={eq.type} className="w-full h-full" />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="flex items-center justify-between gap-1">
+                        <span className="font-mono text-[13px] font-semibold text-ink whitespace-nowrap">{eq.machine_id}</span>
+                        <span className={`inline-flex items-center gap-1 text-[12px] font-medium shrink-0 ${badge.text}`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${badge.dot}`} aria-hidden="true" />
+                          {badge.label}
+                        </span>
+                      </span>
+                      <span className="mt-1 flex items-center gap-1 text-[13px] font-medium text-ink">
+                        <span className="min-w-0 flex-1 truncate">{eq.name}</span>
+                        <ChevronRight className="w-4 h-4 shrink-0 text-subtle group-hover:text-accent" aria-hidden="true" />
+                      </span>
+                      <span className="mt-0.5 block text-[12px] text-muted truncate">{formatLocation(eq.location)}</span>
+                      <span className="mt-0.5 block text-[12px] text-body tabular-nums">{eq.operating_hours.toLocaleString()} h</span>
+                    </span>
+                  </span>
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </section>
   );
 }

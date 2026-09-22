@@ -1,5 +1,5 @@
-import { ChevronRight, FileText, Wrench } from "lucide-react";
-import type { WorkOrderLog } from "./types";
+import { ChevronRight } from "lucide-react";
+import { isOpenWorkOrder, type WorkOrderLog } from "./types";
 
 interface WorkOrderHistoryProps {
   logs: WorkOrderLog[];
@@ -21,13 +21,9 @@ export function WorkOrderHistory({ logs, loading, expandedCode, onToggleExpand }
 
   if (logs.length === 0) {
     return (
-      <div className="p-4 text-center bg-[#F4F6F9] rounded-xl border border-dashed border-[#C3CFDB] space-y-1.5">
-        <Wrench className="w-4 h-4 mx-auto text-[#64748B]" />
-        <p className="text-xs font-bold text-[#16202B]">No work orders yet for this asset</p>
-        <p className="text-[11.5px] text-[#64748B] leading-relaxed">
-          Run a diagnostic to pull history or create the first record.
-        </p>
-      </div>
+      <p className="py-6 text-[13px] text-muted border-y border-line" role="status">
+        No work orders are recorded for this asset.
+      </p>
     );
   }
 
@@ -39,80 +35,65 @@ export function WorkOrderHistory({ logs, loading, expandedCode, onToggleExpand }
   }
 
   return (
-    <div className="space-y-4">
-      {grouped.slice(0, 5).map((group) => {
+    <ul className="divide-y divide-line border-y border-line">
+      {grouped.map((group) => {
         const latest = group.logs[0];
         const count = group.logs.length;
-        const isOpen = group.logs.some(
-          (l) => l.severity.toLowerCase() === "critical" || l.severity.toLowerCase() === "high"
-        );
+        const isOpen = group.logs.some(isOpenWorkOrder);
         const expanded = expandedCode === group.code;
         return (
-          <div key={group.code} className="flex items-start gap-2.5">
+          <li key={group.code} className="flex items-start gap-2.5 py-3">
             <span
-              className={`mt-1.5 w-2.5 h-2.5 rounded-full flex-shrink-0 ${isOpen ? "bg-[#D92D20]" : "bg-[#1A9E57]"}`}
+              className={`mt-1.5 w-2 h-2 rounded-full flex-shrink-0 ${isOpen ? "bg-status-fault" : "bg-status-ok"}`}
+              aria-hidden="true"
             />
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-1.5 min-w-0">
-                <span className="font-mono tabular-nums font-bold text-[13px] text-[#16202B] flex-shrink-0">
+                <span className="font-mono tabular-nums font-bold text-[13px] text-ink flex-shrink-0">
                   {group.code}
                 </span>
                 {count > 1 && (
                   <span
-                    className="flex-shrink-0 px-1.5 py-0.5 rounded bg-[#EDF1F5] text-[#33465A] text-[10px] font-bold font-mono tabular-nums"
+                    className="flex-shrink-0 text-[12px] text-muted tabular-nums"
                     title={`${count} recorded occurrences`}
                   >
                     ×{count}
                   </span>
                 )}
-                <span className="text-[13px] text-[#64748B] truncate" title={latest.fault_description}>
+                <span className="text-[13px] text-body truncate" title={latest.fault_description}>
                   {latest.fault_description.split(".")[0]}
                 </span>
-                <span
-                  className={`ml-auto flex-shrink-0 px-2 py-0.5 rounded text-[10px] font-bold tracking-wide ${
-                    isOpen ? "bg-[#FCECEA] text-[#D92D20]" : "bg-[#E5F6EC] text-[#1A9E57]"
-                  }`}
-                >
-                  {isOpen ? "OPEN" : "CLOSED"}
+                <span className={`ml-auto flex-shrink-0 text-[12px] font-medium ${isOpen ? "text-danger" : "text-muted"}`}>
+                  {isOpen ? "Open" : "Closed"}
                 </span>
               </div>
-              <p className="text-[12px] text-[#64748B] mt-0.5">
-                Technician <span className="font-mono tabular-nums">{latest.technician}</span>
+              <p className="text-[12px] text-muted mt-0.5">
+                {latest.action_taken}, {latest.technician}
               </p>
-              <p className="text-[12.5px] text-[#64748B] leading-snug">{latest.action_taken}</p>
               {count > 1 && (
                 <button
                   type="button"
                   onClick={() => onToggleExpand(expanded ? null : group.code)}
                   aria-expanded={expanded}
-                  className="mt-1 inline-flex items-center gap-1 text-[11.5px] font-semibold text-[#1B2A3A] hover:underline"
+                  className="mt-0.5 inline-flex items-center gap-1 min-h-[36px] pointer-coarse:min-h-[44px] text-[12px] font-semibold text-accent hover:underline cursor-pointer"
                 >
                   {expanded ? "Hide occurrences" : `Show all ${count} occurrences`}
-                  <ChevronRight className={`w-3 h-3 transition-transform duration-200 ${expanded ? "rotate-90" : ""}`} />
+                  <ChevronRight className={`w-3 h-3 transition-transform duration-200 ${expanded ? "rotate-90" : ""}`} aria-hidden="true" />
                 </button>
               )}
               {expanded && (
-                <div className="mt-1.5 space-y-1 border-l-2 border-[#DFE6ED] pl-2.5 animate-fade-in">
+                <div className="mt-1.5 space-y-1 border-l-2 border-line pl-2.5 animate-fade-in">
                   {group.logs.map((l) => (
-                    <p key={l.id} className="text-[11.5px] text-[#64748B] font-mono tabular-nums">
-                      {l.started_at} · {l.technician} · {l.duration_mins}m
+                    <p key={l.id} className="text-[12px] text-muted tabular-nums">
+                      {l.started_at}, {l.technician}, {l.duration_mins} min
                     </p>
                   ))}
                 </div>
               )}
             </div>
-          </div>
+          </li>
         );
       })}
-    </div>
-  );
-}
-
-export function WorkOrderHistoryHeading() {
-  return (
-    <div className="flex items-center gap-2 mb-2.5">
-      <FileText className="w-4 h-4 text-[#16202B]" strokeWidth={2.2} />
-      <h3 className="font-bold text-[14px] tracking-tight text-[#16202B]">Work Order History</h3>
-    </div>
+    </ul>
   );
 }

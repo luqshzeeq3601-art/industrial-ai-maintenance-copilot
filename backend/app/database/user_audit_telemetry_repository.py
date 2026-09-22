@@ -98,7 +98,7 @@ class AuditRepository(BaseRepository):
         try:
             cur = conn.cursor()
             cur.execute(
-                "SELECT action_id, action_type, payload_json FROM action_audit WHERE action_id = ? AND decision = 'requested'",
+                "SELECT action_id, action_type, user_id, payload_json FROM action_audit WHERE action_id = ? AND decision = 'requested'",
                 (action_id.strip(),))
             row = cur.fetchone()
             return dict(row) if row else None

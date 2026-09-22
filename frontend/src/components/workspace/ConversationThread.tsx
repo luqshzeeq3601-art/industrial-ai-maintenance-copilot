@@ -1,8 +1,8 @@
-import type { RefObject } from "react";
-import { CircleAlert, BookOpen } from "lucide-react";
-import { AgentWorkflowDag } from "../visualization/AgentWorkflowDag";
+import type { ReactNode, RefObject } from "react";
+import type { LucideIcon } from "lucide-react";
+import { CircleAlert, BookOpen, RotateCcw } from "lucide-react";
 import { ActionApprovalCard } from "../ActionApprovalCard";
-import type { AuthUser } from "../AuthModal";
+import type { AuthUser } from "../../api/auth";
 import type { Message } from "./types";
 
 function renderInlineFormatted(text: string) {
@@ -10,7 +10,7 @@ function renderInlineFormatted(text: string) {
   return parts.map((part, index) => {
     if (part.startsWith("**") && part.endsWith("**")) {
       return (
-        <strong key={index} className="font-bold text-[#0F172A]">
+        <strong key={index} className="font-bold text-ink">
           {part.slice(2, -2)}
         </strong>
       );
@@ -19,7 +19,7 @@ function renderInlineFormatted(text: string) {
       return (
         <code
           key={index}
-          className="px-1.5 py-0.5 rounded bg-[#F1F5F9] border border-[#E2E8F0] font-mono text-xs text-[#0F172A]"
+          className="px-1.5 py-0.5 rounded bg-wash border border-line font-mono text-xs text-ink"
         >
           {part.slice(1, -1)}
         </code>
@@ -33,7 +33,7 @@ function FormattedContent({ content }: { content: string }) {
   const paragraphs = content.split("\n\n");
 
   return (
-    <div className="space-y-3 leading-relaxed text-[14px] text-[#334155] max-w-[65ch]">
+    <div className="space-y-3 leading-relaxed text-[14px] text-body max-w-[65ch]">
       {paragraphs.map((para, pIdx) => {
         // Bullet list
         if (para.trim().startsWith("- ") || para.trim().startsWith("* ")) {
@@ -42,7 +42,7 @@ function FormattedContent({ content }: { content: string }) {
             <ul key={pIdx} className="space-y-2 pl-2">
               {lines.map((line, lIdx) => (
                 <li key={lIdx} className="flex items-start gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#475569] mt-2.5 shrink-0" aria-hidden="true" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-muted mt-2.5 shrink-0" aria-hidden="true" />
                   <span>{renderInlineFormatted(line.replace(/^[-*]\s+/, ""))}</span>
                 </li>
               ))}
@@ -50,7 +50,7 @@ function FormattedContent({ content }: { content: string }) {
           );
         }
 
-        // Numbered list with circular dark number badges
+        // Numbered list: steps are a real sequence, so the numerals stay
         if (/^\d+[.)]\s+/.test(para.trim())) {
           const lines = para.split("\n");
           return (
@@ -62,17 +62,17 @@ function FormattedContent({ content }: { content: string }) {
                   const itemText = match[2];
                   return (
                     <div key={lIdx} className="flex items-start gap-2.5">
-                      <span className="w-5 h-5 rounded-full bg-[#1E293B] text-white text-[12px] font-bold flex items-center justify-center shrink-0 mt-0.5" aria-hidden="true">
-                        {num}
+                      <span className="w-4 shrink-0 text-right text-[14px] leading-relaxed text-subtle tabular-nums" aria-hidden="true">
+                        {num}.
                       </span>
-                      <span className="leading-relaxed text-[14px] text-[#1E293B]">
+                      <span className="leading-relaxed text-[14px] text-body">
                         {renderInlineFormatted(itemText)}
                       </span>
                     </div>
                   );
                 }
                 return (
-                  <p key={lIdx} className="text-[14px] text-[#334155]">
+                  <p key={lIdx} className="text-[14px] text-body">
                     {renderInlineFormatted(line)}
                   </p>
                 );
@@ -84,7 +84,7 @@ function FormattedContent({ content }: { content: string }) {
         // Heading or bold highlight
         if (para.trim().startsWith("Recommended next steps:")) {
           return (
-            <p key={pIdx} className="font-bold text-[#0F172A] text-[14px] mt-1">
+            <p key={pIdx} className="font-bold text-ink text-[14px] mt-1">
               {para}
             </p>
           );
@@ -103,127 +103,152 @@ interface ConversationThreadProps {
   currentUser: AuthUser | null;
   apiBase: string;
   onOpenAuth: () => void;
+  onNewConversation: () => void;
+  /** Named in the empty state so it is clear what questions are scoped to. */
+  assetName: string;
+  /** Rendered above the messages inside the same scroll region (fault banner, metadata). */
+  lead?: ReactNode;
+  /** One-click starter questions shown while the conversation is empty. */
+  suggestions?: { label: string; icon: LucideIcon; onClick: () => void }[];
 }
 
-/** Diagnostic conversation matching the reference layout. */
+/** Copilot conversation for the selected asset; answers carry their sources and any approval request. */
 export function ConversationThread({
   messages,
   loading,
   chatEndRef,
   currentUser,
   apiBase,
-  onOpenAuth
+  onOpenAuth,
+  onNewConversation,
+  assetName,
+  lead,
+  suggestions = []
 }: ConversationThreadProps) {
-  // Find latest workflow trace to display at bottom
-  const latestTrace = [...messages].reverse().find((m) => m.workflow_trace && m.workflow_trace.length > 0)?.workflow_trace;
+  const hasQuestions = messages.some((m) => m.role === "user");
 
   return (
-    <div className="flex-1 min-h-0 overflow-y-auto px-5 py-4 custom-scrollbar">
-      <div className="w-full space-y-4">
+    <div className="px-4 @min-[560px]:px-6 py-5">
+      {lead && <div className="space-y-3 mb-4">{lead}</div>}
+      {hasQuestions ? (
+        <div className="flex justify-end -mt-2 mb-2">
+          <button
+            type="button"
+            onClick={onNewConversation}
+            disabled={loading}
+            className="inline-flex items-center gap-1.5 min-h-[36px] px-2 -mr-2 rounded-md text-[13px] font-medium text-muted hover:text-ink hover:bg-wash transition-colors cursor-pointer disabled:opacity-50"
+          >
+            <RotateCcw className="w-3.5 h-3.5" aria-hidden="true" />
+            New conversation
+          </button>
+        </div>
+      ) : (
+        !loading && (
+          <div className="py-6">
+            <p className="text-[15px] font-semibold text-ink">Ask about {assetName}</p>
+            <p className="mt-1 text-[13px] text-muted">Answers cite manuals and work orders. Drafted work orders need approval.</p>
+            {suggestions.length > 0 && (
+              <ul className="mt-4 flex flex-wrap gap-2" aria-label="Suggested questions">
+                {suggestions.map(({ label, icon: Icon, onClick }) => (
+                  <li key={label}>
+                    <button
+                      type="button"
+                      onClick={onClick}
+                      className="inline-flex items-center gap-2 min-h-[36px] pointer-coarse:min-h-[44px] px-3 rounded-lg border border-line bg-panel text-[13px] font-medium text-body hover:border-accent-line hover:bg-accent-bg hover:text-accent-ink transition-colors cursor-pointer"
+                    >
+                      <Icon className="w-4 h-4 text-accent" aria-hidden="true" />
+                      {label}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )
+      )}
+      <div className="w-full space-y-5" role="log" aria-live="polite" aria-label="Diagnostic conversation">
         {messages.map((msg, idx) => {
-          const isUser = msg.role === "user";
+          if (msg.role === "context") {
+            return (
+              <div key={idx} className="flex items-center gap-3 py-1 text-[12px] text-muted" role="separator" aria-label={msg.content}>
+                <span className="h-px flex-1 bg-line" aria-hidden="true" />
+                <span className="shrink-0">{msg.content}</span>
+                <span className="font-mono tabular-nums shrink-0">{msg.timestamp}</span>
+                <span className="h-px flex-1 bg-line" aria-hidden="true" />
+              </div>
+            );
+          }
+          if (msg.role === "user") {
+            return (
+              <div key={idx} className="flex flex-col items-end gap-1">
+                <p className="max-w-[85%] rounded-lg bg-wash px-3.5 py-2 text-[14px] text-ink leading-relaxed break-words">
+                  {msg.content}
+                </p>
+                <span className="text-[11px] text-muted tabular-nums">You, {msg.timestamp}</span>
+              </div>
+            );
+          }
 
           return (
-            <div key={idx} className="space-y-2">
-              {isUser ? (
-                /* User Message matching screenshot */
-                <div className="flex items-center gap-3 py-1">
-                  <div className="w-8 h-8 rounded-full bg-[#E2E8F0] text-[#334155] font-bold text-[12px] flex items-center justify-center shrink-0" aria-hidden="true">
-                    U
-                  </div>
-                  <div className="flex-1 min-w-0 rounded-xl bg-[#F1F5F9] px-4 py-3 flex items-center justify-between gap-3 text-[14px] text-[#0F172A] font-medium leading-relaxed">
-                    <span>{msg.content}</span>
-                    <span className="text-[12px] text-[#475569] font-mono tabular-nums shrink-0">
-                      {msg.timestamp}
-                    </span>
-                  </div>
-                </div>
+            <article key={idx} aria-label={`Copilot answer at ${msg.timestamp}`}>
+              <p className="flex items-baseline gap-2 mb-1.5 text-[12px]">
+                <span className="font-semibold text-ink">Copilot</span>
+                <span className="text-muted tabular-nums">{msg.timestamp}</span>
+              </p>
+
+              {msg.error ? (
+                <p className="flex items-start gap-2 text-[14px] text-danger-ink" role="alert">
+                  <CircleAlert className="w-4 h-4 shrink-0 mt-0.5 text-danger" aria-hidden="true" />
+                  {msg.content}
+                </p>
               ) : (
-                /* AI Message */
-                <div className="space-y-1.5 pt-1">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-full bg-[#1E293B] text-white font-bold text-[12px] flex items-center justify-center shrink-0" aria-hidden="true">
-                        AI
-                      </div>
-                      <span className="text-[14px] font-bold text-[#0F172A]">
-                        Maintenance Copilot
-                      </span>
-                    </div>
-                    <span className="text-[12px] text-[#475569] font-mono tabular-nums">
-                      {msg.timestamp}
-                    </span>
-                  </div>
-
-                  <div className="pl-10">
-                    <FormattedContent content={msg.content} />
-
-                    {/* Citations */}
-                    {msg.citations && msg.citations.length > 0 && (
-                      <div className="mt-2.5 pt-2 border-t border-[#E2E8F0] flex flex-wrap gap-2">
-                        {msg.citations.map((cit, cIdx) => (
-                          <span
-                            key={cIdx}
-                            className="px-2.5 py-1 rounded-lg bg-[#F1F5F9] border border-[#CBD5E1] text-[12px] font-mono text-[#334155]"
-                            title={cit.snippet}
-                          >
-                            <BookOpen className="w-3.5 h-3.5 inline mr-1 text-[#0369A1]" aria-hidden="true" />
-                            {cit.document || cit.source || "OEM Manual"}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-
-                    {msg.abstain && (
-                      <div className="mt-2.5 flex items-start gap-2 text-[13px] bg-[#FEF2F2] border border-[#FECACA] text-[#7F1D1D] p-3 rounded-lg" role="alert">
-                        <CircleAlert className="w-4 h-4 shrink-0 mt-0.5 text-[#B91C1C]" aria-hidden="true" />
-                        <div>
-                          <p className="font-bold">Deterministic abstention enforced</p>
-                          <p className="text-[12px] mt-0.5">
-                            Query resolved as outside verified industrial maintenance documentation.
-                          </p>
-                        </div>
-                      </div>
-                    )}
-
-                    {msg.pending_action && (
-                      <div className="mt-2">
-                        <ActionApprovalCard
-                          action={msg.pending_action}
-                          currentUser={currentUser}
-                          apiBase={apiBase}
-                          onOpenAuth={onOpenAuth}
-                        />
-                      </div>
-                    )}
-                  </div>
-                </div>
+                <FormattedContent content={msg.content} />
               )}
-            </div>
+
+              {msg.citations && msg.citations.length > 0 && (
+                <p className="mt-2 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[12px] text-muted">
+                  <BookOpen className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                  <span>Sources:</span>
+                  {msg.citations.map((cit, cIdx) => (
+                    <span key={cIdx} className="text-body" title={cit.snippet}>
+                      {cit.document || cit.source || "OEM manual"}
+                      {cIdx < msg.citations!.length - 1 ? "," : ""}
+                    </span>
+                  ))}
+                </p>
+              )}
+
+              {msg.abstain && (
+                <p className="mt-2 flex items-start gap-2 text-[13px] text-warn-ink" role="note">
+                  <CircleAlert className="w-4 h-4 shrink-0 mt-0.5 text-warn" aria-hidden="true" />
+                  Not covered by verified plant documentation. Name the asset and fault code, or rephrase.
+                </p>
+              )}
+
+              {msg.pending_action && (
+                <ActionApprovalCard
+                  action={msg.pending_action}
+                  currentUser={currentUser}
+                  apiBase={apiBase}
+                  onOpenAuth={onOpenAuth}
+                />
+              )}
+            </article>
           );
         })}
 
         {loading && (
-          <div className="space-y-2" role="status" aria-label="Coordinating multi-agent diagnostics">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-[#1E293B] text-white font-bold text-[12px] flex items-center justify-center shrink-0" aria-hidden="true">
-                AI
-              </div>
-              <span className="text-[13px] font-mono text-[#475569]">
-                Coordinating multi-agent diagnostics...
-              </span>
-            </div>
-            <div className="ml-10 space-y-2" aria-hidden="true">
+          <div role="status" aria-label="Copilot is analyzing">
+            <p className="text-[12px] mb-2">
+              <span className="font-semibold text-ink">Copilot</span>
+              <span className="text-muted"> is analyzing…</span>
+            </p>
+            <div className="space-y-2" aria-hidden="true">
               <div className="skeleton h-3 w-3/4" />
               <div className="skeleton h-3 w-1/2" />
             </div>
           </div>
         )}
-
-        {/* Workflow Strip at the bottom of the conversation matching screenshot */}
-        <div className="pt-2">
-          <AgentWorkflowDag workflowTrace={latestTrace || []} />
-        </div>
 
         <div ref={chatEndRef} />
       </div>
