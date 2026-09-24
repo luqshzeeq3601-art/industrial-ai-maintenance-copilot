@@ -15,6 +15,21 @@ export interface Citation {
   document?: string;
   page?: number | string;
   snippet?: string;
+  doc_type?: string;
+}
+
+/** Cited file name ("sop_x.md") → readable title ("SOP x"); other sources pass through. */
+export function citationTitle(c: Citation): string {
+  const raw = c.document || c.source || "OEM manual";
+  if (!/\.md$/i.test(raw)) return raw;
+  const words = raw.replace(/\.md$/i, "").replace(/^sop_/i, "SOP ").replace(/[_-]+/g, " ").trim();
+  return words.charAt(0).toUpperCase() + words.slice(1);
+}
+
+/** Only plain markdown file names can be opened from /api/documents. */
+export function citationFile(c: Citation): string | null {
+  const raw = c.document || c.source || "";
+  return /^[A-Za-z0-9_-]+\.md$/.test(raw) ? raw : null;
 }
 
 export interface Message {
@@ -60,13 +75,49 @@ export function statusMeta(status: string): { label: string; dot: string } {
   }
 }
 
-/** "Cell A-1" or "Plant A Cell 1" → ["Plant A", "Cell 1"]. */
+/** "Cell A-1", "Plant A Cell 1" or "Plant A, Cell 1" → ["Plant A", "Cell 1"]. */
 export function splitLocation(loc: string): [string, string] {
-  const m = loc.match(/Cell\s+([A-Za-z]+)[-\s]?(\d+)/i);
+  const m = loc.match(/^Cell\s+([A-Za-z]+)[-\s]?(\d+)$/i);
   if (m) return [`Plant ${m[1].toUpperCase()}`, `Cell ${m[2]}`];
-  const p = loc.match(/^(Plant\s+\S+)\s+(.+)$/i);
-  if (p) return [p[1], p[2]];
-  return [loc, ""];
+  const p = loc.match(/^(Plant\s+[^,\s]+),?\s+(.+)$/i);
+  if (p) return [p[1], p[2].trim()];
+  return [loc.trim(), ""];
+}
+
+/** "Plant A, Cell 1" with no doubled separators. */
+export function formatLocation(loc: string): string {
+  return splitLocation(loc).filter(Boolean).join(", ");
+}
+
+const dateTimeFormat = new Intl.DateTimeFormat(undefined, { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
+const relativeFormat = new Intl.RelativeTimeFormat(undefined, { numeric: "auto" });
+
+/** The API stores naive UTC ("2026-09-23 06:58:16"); zone-less values are read as UTC. */
+export function parseTimestamp(value?: string | Date | null): Date | null {
+  if (!value) return null;
+  if (value instanceof Date) return Number.isNaN(value.getTime()) ? null : value;
+  const iso = value.trim().replace(" ", "T");
+  const d = new Date(/(Z|[+-]\d{2}:?\d{2})$/i.test(iso) ? iso : `${iso}Z`);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+export function formatDateTime(value?: string | Date | null): string {
+  const d = parseTimestamp(value);
+  return d ? dateTimeFormat.format(d) : "Unknown time";
+}
+
+/** "3 hours ago", "yesterday", "in 2 days". */
+export function formatRelative(value?: string | Date | null, now = Date.now()): string {
+  const d = parseTimestamp(value);
+  if (!d) return "";
+  const seconds = Math.round((d.getTime() - now) / 1000);
+  const abs = Math.abs(seconds);
+  if (abs < 60) return relativeFormat.format(seconds, "second");
+  if (abs < 3600) return relativeFormat.format(Math.round(seconds / 60), "minute");
+  if (abs < 86_400) return relativeFormat.format(Math.round(seconds / 3600), "hour");
+  if (abs < 86_400 * 30) return relativeFormat.format(Math.round(seconds / 86_400), "day");
+  if (abs < 86_400 * 365) return relativeFormat.format(Math.round(seconds / (86_400 * 30)), "month");
+  return relativeFormat.format(Math.round(seconds / (86_400 * 365)), "year");
 }
 
 /** Latest reading per metric from GET /api/v1/telemetry/events. */
@@ -76,6 +127,8 @@ export interface TelemetryReading {
   unit: string;
   severity?: string | null;
   timestamp?: string | null;
+  /** Earlier values for this metric, oldest first, ending with `value`. */
+  history?: number[];
 }
 
 export type AssetTab = "overview" | "diagnostics" | "sops" | "logs";
@@ -109,7 +162,7 @@ export function metricLabel(metric: string): string {
   return words.charAt(0).toUpperCase() + words.slice(1);
 }
 
-/** Open = explicit OPEN severity or an active E- alarm code. */
+/** Open = not completed yet (no completion time), or explicitly marked OPEN. */
 export function isOpenWorkOrder(log: WorkOrderLog): boolean {
-  return log.severity?.toUpperCase() === "OPEN" || log.fault_code.startsWith("E-");
+  return log.severity?.toUpperCase() === "OPEN" || !log.completed_at?.trim();
 }

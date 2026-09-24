@@ -2,39 +2,69 @@ import { useState } from "react";
 import { AlertTriangle, BookOpen, ChevronRight, ClipboardList, FileText, ListChecks, Stethoscope } from "lucide-react";
 import type { EquipmentData } from "../visualization/OperatingHoursBarChart";
 import { WorkOrderHistory } from "./WorkOrderHistory";
-import type { Citation, Message, WorkOrderLog } from "./types";
+import { citationTitle, formatRelative, type Citation, type Message, type WorkOrderLog } from "./types";
 
-const SECTION_TITLE = "text-[15px] font-semibold text-ink";
+const SECTION_TITLE = "text-copy font-semibold text-ink";
 const SECONDARY_BUTTON =
-  "inline-flex items-center justify-center gap-2 min-h-[36px] px-3 rounded-md border border-line-strong bg-panel hover:bg-sunken text-ink text-[13px] font-medium transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed";
+  "inline-flex items-center justify-center gap-2 min-h-[36px] px-3 rounded-md border border-line-strong bg-panel hover:bg-sunken text-ink text-small font-medium transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed";
 
 interface FaultBannerProps {
   machine: EquipmentData;
-  faultCode: string | null;
-  faultSummary: string;
+  /** The open work order behind the alarm, if one is logged. */
+  openLog: WorkOrderLog | null;
+  /** Most recent work order of any state, shown when nothing is open. */
+  lastLog: WorkOrderLog | null;
+  logsLoading: boolean;
+  busy: boolean;
   onCheckAlarm: () => void;
 }
 
-/** Active alarm; renders nothing for healthy assets (the status badge already says so). */
-export function FaultBanner({ machine, faultCode, faultSummary, onCheckAlarm }: FaultBannerProps) {
+/** Active alarm, stated from the record: fault code, what was logged, when, and by whom. */
+export function FaultBanner({ machine, openLog, lastLog, logsLoading, busy, onCheckAlarm }: FaultBannerProps) {
   if (machine.status.toLowerCase() !== "fault") return null;
+  const code = openLog?.fault_code ?? null;
+  const summary = openLog?.fault_description?.split(".")[0] || "The asset is reporting a fault";
+  const severity = openLog?.severity ? openLog.severity.charAt(0).toUpperCase() + openLog.severity.slice(1).toLowerCase() : null;
 
   return (
-    <div className="flex items-center gap-3 pl-4 pr-2 py-2 min-h-[52px] rounded-lg border border-danger-line bg-danger-bg/50" role="alert">
-      <AlertTriangle className="w-4 h-4 text-danger shrink-0" strokeWidth={2} aria-hidden="true" />
-      <p className="flex-1 min-w-0 text-[14px] text-ink leading-snug">
-        {faultCode && <span className="font-mono font-semibold text-danger mr-2">{faultCode}</span>}
-        {faultSummary}
-      </p>
-      <button
-        type="button"
-        onClick={onCheckAlarm}
-        className="shrink-0 inline-flex items-center gap-0.5 min-h-[36px] px-2.5 rounded-md text-[13px] font-medium text-danger-ink hover:bg-danger-bg transition-colors cursor-pointer"
-        aria-label={`Explain alarm ${faultCode ?? ""}: ${faultSummary}`}
-      >
-        Explain
-        <ChevronRight className="w-4 h-4" aria-hidden="true" />
-      </button>
+    <div className="rounded-xl border border-red-200 bg-red-50/80 p-4 shadow-xs" role="alert">
+      <div className="flex flex-col @min-[540px]:flex-row @min-[540px]:items-center justify-between gap-4">
+        <div className="flex items-start gap-3.5 min-w-0">
+          <div className="w-10 h-10 rounded-lg bg-red-100 border border-red-200 flex items-center justify-center text-red-600 shrink-0">
+            <AlertTriangle className="w-5 h-5" strokeWidth={2.2} aria-hidden="true" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="font-mono text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-red-600 text-white tracking-wider shadow-xs">
+                {code ? `ALARM ${code}` : "ACTIVE ALARM"}
+              </span>
+              <span className="font-mono text-[11px] font-semibold px-2.5 py-0.5 rounded-full border border-red-400/60 text-red-700 tracking-wider">
+                {severity ? `${severity.toUpperCase()} INTERLOCK` : "ACTIVE CRITICAL INTERLOCK"}
+              </span>
+            </div>
+            <h2 className="mt-2 text-base font-bold text-ink leading-snug tracking-tight">{summary}</h2>
+            <p className="mt-1 text-xs text-body leading-relaxed">
+              {logsLoading
+                ? "Loading the work order record…"
+                : openLog
+                  ? `Work order #${openLog.id} opened ${formatRelative(openLog.started_at)} by ${openLog.technician}. ${openLog.action_taken || "Copilot triage detected sub-nominal operating parameters. Investigation procedure ready."}`
+                  : lastLog
+                    ? `No open work order is logged. The last one, #${lastLog.id} for ${lastLog.fault_code}, was completed ${formatRelative(lastLog.completed_at || lastLog.started_at)}.`
+                    : "No work order is logged for this asset yet."}
+            </p>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={onCheckAlarm}
+          disabled={busy}
+          className="shrink-0 self-start @min-[540px]:self-center inline-flex items-center gap-1.5 min-h-[38px] px-4 rounded-lg font-semibold text-xs tracking-wide bg-red-600 text-white hover:bg-red-700 active:bg-red-800 shadow-xs transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+        >
+          {code ? `Explain ${code}` : "Explain the fault"}
+          <ChevronRight className="w-4 h-4 ml-0.5" aria-hidden="true" />
+        </button>
+      </div>
     </div>
   );
 }
@@ -74,42 +104,60 @@ export function DiagnosticsTab({
   return (
     <div className="space-y-6">
       <section aria-labelledby="probes-heading">
-        <h3 id="probes-heading" className={SECTION_TITLE}>Run a check</h3>
-        <p className="text-[13px] text-muted mt-0.5">Answers appear in Overview.</p>
-        <ul className="mt-3 grid gap-2 @min-[720px]:grid-cols-3">
-          {probes.map(({ icon: Icon, title, detail, run }) => (
-            <li key={title}>
-              <button
-                type="button"
-                onClick={run}
-                disabled={loading}
-                className="w-full h-full flex items-start gap-2.5 px-3 py-2.5 min-h-[52px] rounded-md border border-line hover:border-accent-line hover:bg-accent-bg text-left transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
-              >
-                <Icon className="w-4 h-4 mt-0.5 text-accent shrink-0" aria-hidden="true" />
-                <span>
-                  <span className="block text-[13px] font-semibold text-ink">{title}</span>
-                  <span className="block text-[12px] text-muted mt-0.5">{detail}</span>
-                </span>
-              </button>
-            </li>
-          ))}
+        <h2 id="probes-heading" className="text-sm font-bold text-ink">Run a check</h2>
+        <p className="text-xs text-muted mt-0.5">Automated diagnostic procedures and service audits. Answers appear in Overview.</p>
+        <ul className="mt-3.5 grid gap-3 @min-[720px]:grid-cols-3">
+          {probes.map(({ icon: Icon, title, detail, run }) => {
+            const isAlarm = title.toLowerCase().includes("alarm") || title.toLowerCase().includes("fault");
+            const isService = title.toLowerCase().includes("service") || title.toLowerCase().includes("checklist");
+            return (
+              <li key={title}>
+                <button
+                  type="button"
+                  onClick={run}
+                  disabled={loading}
+                  className={`w-full h-full flex items-start gap-3 p-3.5 rounded-lg border text-left transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed group ${
+                    isAlarm
+                      ? "border-red-200 bg-red-50/40 hover:border-red-400 hover:bg-red-50"
+                      : "border-line bg-sunken hover:border-blue-400 hover:bg-blue-50/40"
+                  }`}
+                >
+                  <div
+                    className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 border ${
+                      isAlarm
+                        ? "bg-red-100 border-red-200 text-red-600"
+                        : isService
+                        ? "bg-amber-100 border-amber-200 text-amber-600"
+                        : "bg-blue-100 border-blue-200 text-blue-600"
+                    }`}
+                  >
+                    <Icon className="w-4 h-4" strokeWidth={2} aria-hidden="true" />
+                  </div>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-xs sm:text-sm font-semibold text-ink leading-tight">{title}</span>
+                    <span className="block text-[11px] text-muted mt-1 leading-snug">{detail}</span>
+                  </span>
+                </button>
+              </li>
+            );
+          })}
         </ul>
       </section>
 
       <section aria-labelledby="trace-heading" className="pt-5 border-t border-line">
-        <h3 id="trace-heading" className={SECTION_TITLE}>How the last answer was produced</h3>
+        <h2 id="trace-heading" className="text-sm font-bold text-ink">How the last answer was produced</h2>
         {trace.length === 0 ? (
-          <p className="text-[13px] text-muted mt-2">Run a check to see the steps.</p>
+          <p className="text-xs text-muted mt-1.5 font-mono">No active trace. Run a check to inspect multi-agent orchestration steps.</p>
         ) : (
-          <ol className="mt-3 space-y-2.5">
+          <ol className="mt-3.5 space-y-2.5">
             {trace.map((step, i) => (
-              <li key={i} className="flex items-start gap-3 text-[13px]">
-                <span className="w-5 h-5 mt-px rounded-full bg-wash text-muted text-[11px] font-semibold flex items-center justify-center shrink-0">
+              <li key={i} className="flex items-start gap-3 p-2.5 rounded-lg border border-line bg-sunken/60 text-xs">
+                <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-600 font-mono text-[10px] font-bold flex items-center justify-center shrink-0 border border-blue-200">
                   {i + 1}
                 </span>
                 <span className="min-w-0">
-                  <span className="font-semibold text-ink capitalize">{step.agent}</span>
-                  <span className="block text-body">{step.summary}</span>
+                  <span className="font-bold text-ink capitalize tracking-wide">{step.agent}</span>
+                  <span className="block text-body mt-0.5 leading-relaxed">{step.summary}</span>
                 </span>
               </li>
             ))}
@@ -125,9 +173,10 @@ interface SopsTabProps {
   messages: Message[];
   loading: boolean;
   onOpenSop: () => void;
+  onOpenCitation: (citation: Citation) => void;
 }
 
-export function SopsTab({ machine, messages, loading, onOpenSop }: SopsTabProps) {
+export function SopsTab({ machine, messages, loading, onOpenSop, onOpenCitation }: SopsTabProps) {
   const seen = new Set<string>();
   const cited: Citation[] = [];
   for (const m of messages) {
@@ -144,8 +193,8 @@ export function SopsTab({ machine, messages, loading, onOpenSop }: SopsTabProps)
     <section aria-labelledby="sops-heading">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h3 id="sops-heading" className={SECTION_TITLE}>Cited procedures</h3>
-          <p className="text-[13px] text-muted mt-0.5">Manuals and SOPs referenced in this session.</p>
+          <h2 id="sops-heading" className={SECTION_TITLE}>Cited procedures</h2>
+          <p className="text-small text-muted mt-0.5">Manuals and SOPs referenced in this session.</p>
         </div>
         <button type="button" onClick={onOpenSop} disabled={loading} className={SECONDARY_BUTTON}>
           <FileText className="w-4 h-4 text-subtle" aria-hidden="true" />
@@ -154,21 +203,28 @@ export function SopsTab({ machine, messages, loading, onOpenSop }: SopsTabProps)
       </div>
 
       {cited.length === 0 ? (
-        <p className="mt-4 text-[13px] text-muted">
+        <p className="mt-4 text-small text-muted">
           None yet. Ask for the {machine.name} procedure and the sources will be listed here.
         </p>
       ) : (
         <ul className="mt-3 divide-y divide-line border-t border-line">
           {cited.map((c, i) => (
-            <li key={i} className="flex items-start gap-3 py-3">
-              <BookOpen className="w-4 h-4 mt-0.5 text-subtle shrink-0" aria-hidden="true" />
-              <div className="min-w-0">
-                <p className="text-[13px] font-semibold text-ink">
-                  {c.document || c.source || "OEM manual"}
-                  {c.page != null && <span className="font-normal text-muted">, page {c.page}</span>}
-                </p>
-                {c.snippet && <p className="text-[13px] text-body mt-0.5 line-clamp-2">{c.snippet}</p>}
-              </div>
+            <li key={i}>
+              <button
+                type="button"
+                onClick={() => onOpenCitation(c)}
+                className="w-full flex items-start gap-3 py-3 px-2 -mx-2 rounded-md text-left hover:bg-sunken cursor-pointer"
+              >
+                <BookOpen className="w-4 h-4 mt-0.5 text-subtle shrink-0" aria-hidden="true" />
+                <span className="min-w-0 flex-1">
+                  <span className="block text-small font-semibold text-ink">
+                    {citationTitle(c)}
+                    {c.page != null && <span className="font-normal text-muted">, page {c.page}</span>}
+                  </span>
+                  {c.snippet && <span className="block text-small text-body mt-0.5 line-clamp-2">{c.snippet}</span>}
+                </span>
+                <ChevronRight className="w-4 h-4 mt-0.5 text-subtle shrink-0" aria-hidden="true" />
+              </button>
             </li>
           ))}
         </ul>
@@ -190,8 +246,8 @@ export function LogsTab({ logs, logsState, loading, onAuditLogs }: LogsTabProps)
     <section aria-labelledby="logs-heading">
       <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
         <div>
-          <h3 id="logs-heading" className={SECTION_TITLE}>Work order history</h3>
-          <p className="text-[13px] text-muted mt-0.5">
+          <h2 id="logs-heading" className={SECTION_TITLE}>Work order history</h2>
+          <p className="text-small text-muted mt-0.5">
             {logsState === "loading"
               ? "Loading records…"
               : logsState === "error"

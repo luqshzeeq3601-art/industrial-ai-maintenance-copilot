@@ -23,8 +23,8 @@ export function FleetHealthDonut({ distribution, totalUnits, selected, onSelect 
   let offset = 0;
 
   return (
-    <section aria-labelledby="fleet-health-heading" className="h-full flex flex-col bg-panel border border-line rounded-xl shadow-[var(--shadow-tinted-xs)] p-5">
-      <h2 id="fleet-health-heading" className="text-[16px] font-semibold text-ink">Fleet health</h2>
+    <section aria-labelledby="fleet-health-heading" className="h-full flex flex-col bg-panel rounded-lg border border-line-strong/70 shadow-[var(--shadow-cockpit)] p-5">
+      <h2 id="fleet-health-heading" className="text-title font-semibold text-ink">Fleet health</h2>
 
       <div className="flex-1 mt-5 flex flex-col sm:flex-row lg:flex-col 2xl:flex-row items-center justify-center gap-6">
         <div className="relative shrink-0" style={{ width: size, height: size }}>
@@ -55,8 +55,8 @@ export function FleetHealthDonut({ distribution, totalUnits, selected, onSelect 
               })}
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <span className="text-[26px] font-semibold text-ink tabular-nums leading-none">{totalUnits}</span>
-            <span className="text-[13px] text-muted mt-1">units</span>
+            <span className="text-heading font-semibold text-ink tabular-nums leading-none">{totalUnits}</span>
+            <span className="text-small text-muted mt-1">units</span>
           </div>
         </div>
 
@@ -72,7 +72,7 @@ export function FleetHealthDonut({ distribution, totalUnits, selected, onSelect 
                   onClick={() => onSelect(on ? "all" : seg.key)}
                   aria-pressed={on}
                   title={on ? "Show all assets" : `Show ${seg.label.toLowerCase()} assets on the board`}
-                  className={`w-full flex items-center gap-3 min-h-[40px] px-2.5 rounded-lg text-[14px] text-left transition-colors cursor-pointer ${
+                  className={`w-full flex items-center gap-3 min-h-[40px] px-2.5 rounded-lg text-copy text-left transition-colors cursor-pointer ${
                     on ? "bg-sunken" : "hover:bg-sunken"
                   }`}
                 >
@@ -87,8 +87,8 @@ export function FleetHealthDonut({ distribution, totalUnits, selected, onSelect 
         </ul>
       </div>
 
-      <div className="mt-4 pt-3 border-t border-line flex items-center justify-between text-[13px]">
-        <span className="text-muted">Availability</span>
+      <div className="mt-4 pt-3 border-t border-line flex items-center justify-between text-small">
+        <span className="text-muted">Units running</span>
         <span className="font-semibold text-ink tabular-nums">
           {totalUnits ? Math.round(((distribution.operational || 0) / totalUnits) * 100) : 0}%
         </span>

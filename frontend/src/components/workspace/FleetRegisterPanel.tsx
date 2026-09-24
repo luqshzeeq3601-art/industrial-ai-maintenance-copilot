@@ -1,7 +1,8 @@
 import { useEffect, useRef, type KeyboardEvent } from "react";
 import { Search, X } from "lucide-react";
 import type { EquipmentData } from "../visualization/OperatingHoursBarChart";
-import { OVERHAUL_THRESHOLD, statusMeta } from "./types";
+import { EquipmentSchematicIcon } from "./EquipmentSchematicIcon";
+import { OVERHAUL_THRESHOLD, formatLocation, statusMeta } from "./types";
 
 interface FleetRegisterPanelProps {
   equipment: EquipmentData[];
@@ -9,6 +10,8 @@ interface FleetRegisterPanelProps {
   onSelect: (machineId: string) => void;
   searchFilter: string;
   onSearchChange: (value: string) => void;
+  statusFilter?: string | null;
+  onStatusFilterChange?: (status: string | null) => void;
 }
 
 // Exceptions sort above the healthy fleet so a fault is never scrolled out of sight
@@ -19,7 +22,9 @@ export function FleetRegisterPanel({
   selectedId,
   onSelect,
   searchFilter,
-  onSearchChange
+  onSearchChange,
+  statusFilter = null,
+  onStatusFilterChange
 }: FleetRegisterPanelProps) {
   const listRef = useRef<HTMLUListElement>(null);
 
@@ -29,6 +34,20 @@ export function FleetRegisterPanel({
       ?.querySelector<HTMLElement>(`[data-asset="${CSS.escape(selectedId)}"]`)
       ?.scrollIntoView({ block: "nearest" });
   }, [selectedId]);
+
+  // Global shortcut '/' to focus search input from anywhere
+  useEffect(() => {
+    const onGlobalKey = (e: globalThis.KeyboardEvent) => {
+      if (e.key === "/" && !["INPUT", "TEXTAREA", "SELECT"].includes((e.target as HTMLElement)?.tagName) && !(e.target as HTMLElement)?.isContentEditable) {
+        e.preventDefault();
+        const searchInput = document.getElementById("fleet-filter") as HTMLInputElement | null;
+        searchInput?.focus();
+        searchInput?.select();
+      }
+    };
+    window.addEventListener("keydown", onGlobalKey);
+    return () => window.removeEventListener("keydown", onGlobalKey);
+  }, []);
 
   // Arrow keys move focus between rows; Enter/Space selects
   const onListKey = (e: KeyboardEvent<HTMLUListElement>) => {
@@ -43,12 +62,15 @@ export function FleetRegisterPanel({
   };
 
   const q = searchFilter.trim().toLowerCase();
-  const filtered = equipment.filter(
-    (eq) =>
+  const filtered = equipment.filter((eq) => {
+    const matchesSearch =
       eq.machine_id.toLowerCase().includes(q) ||
       eq.name.toLowerCase().includes(q) ||
-      eq.location.toLowerCase().includes(q)
-  );
+      eq.location.toLowerCase().includes(q);
+    const matchesStatus = !statusFilter || eq.status.toLowerCase() === statusFilter.toLowerCase();
+    return matchesSearch && matchesStatus;
+  });
+
   const rank = (eq: EquipmentData) => STATUS_ORDER[eq.status.toLowerCase()] ?? 2;
   const groups = [
     { id: "attention", title: "Needs attention", items: filtered.filter((eq) => rank(eq) < 2).sort((a, b) => rank(a) - rank(b)) },
@@ -58,13 +80,32 @@ export function FleetRegisterPanel({
   return (
     <aside
       aria-label="Fleet register"
-      className="w-full h-full flex flex-col bg-panel rounded-xl border border-line shadow-[var(--shadow-tinted-xs)] overflow-hidden"
+      className="@container w-full h-full flex flex-col bg-panel rounded-lg border border-line-strong/70 shadow-[var(--shadow-cockpit)] overflow-hidden"
     >
-      <div className="px-4 pt-5 pb-3">
-        <div className="flex items-baseline justify-between gap-2 mb-3">
-          <h2 className="text-[15px] font-semibold text-ink">Fleet</h2>
-          <span className="text-[13px] text-muted tabular-nums" aria-live="polite">
-            {q ? `${filtered.length} of ${equipment.length}` : `${equipment.length} assets`}
+      <div className="px-3.5 pt-4 pb-3 border-b border-line">
+        <div className="flex items-baseline justify-between gap-2 mb-2.5">
+          <div className="flex items-center gap-2">
+            <h2 className="text-copy font-bold text-ink">Fleet register</h2>
+            {statusFilter && (
+              <span className="inline-flex items-center gap-0.5 h-6 pl-2 rounded-md text-meta font-medium bg-accent-bg text-accent-ink border border-accent-line">
+                {statusMeta(statusFilter).label}
+                {onStatusFilterChange ? (
+                  <button
+                    type="button"
+                    onClick={() => onStatusFilterChange(null)}
+                    className="w-8 h-8 pointer-coarse:w-11 pointer-coarse:h-11 -my-1 flex items-center justify-center rounded-md hover:text-ink cursor-pointer"
+                    aria-label={`Clear ${statusMeta(statusFilter).label} filter`}
+                  >
+                    <X className="w-3.5 h-3.5" aria-hidden="true" />
+                  </button>
+                ) : (
+                  <span className="pr-2" />
+                )}
+              </span>
+            )}
+          </div>
+          <span className="text-meta font-mono text-muted tabular-nums" aria-live="polite">
+            {q || statusFilter ? `${filtered.length} of ${equipment.length}` : `${equipment.length} units`}
           </span>
         </div>
 
@@ -78,37 +119,48 @@ export function FleetRegisterPanel({
             type="search"
             value={searchFilter}
             onChange={(e) => onSearchChange(e.target.value)}
-            placeholder="Search ID, model, location"
+            onKeyDown={(e) => {
+              if (e.key === "Escape") {
+                if (searchFilter) onSearchChange("");
+                else (e.target as HTMLInputElement).blur();
+              }
+            }}
+            placeholder="Search ID, model, location..."
             autoComplete="off"
-            className="w-full min-h-[40px] bg-sunken border border-line rounded-lg pl-9 pr-10 text-[13px] text-ink placeholder:text-subtle hover:border-line-strong focus:outline-none focus:bg-panel focus:border-accent focus:ring-2 focus:ring-accent/15 transition-colors [&::-webkit-search-cancel-button]:hidden"
+            className="w-full min-h-[38px] bg-sunken border border-line rounded-lg pl-9 pr-9 text-title sm:text-small text-ink placeholder:text-subtle hover:border-line-strong focus:outline-none focus:bg-panel focus:border-accent focus:ring-1 focus:ring-accent transition-colors [&::-webkit-search-cancel-button]:hidden"
           />
-          {searchFilter && (
+          {searchFilter ? (
             <button
               type="button"
               onClick={() => onSearchChange("")}
-              className="absolute right-0 top-0 min-w-[40px] min-h-[40px] flex items-center justify-center rounded-lg text-subtle hover:text-ink cursor-pointer"
+              className="absolute right-0 top-0 min-w-[38px] min-h-[38px] flex items-center justify-center rounded-md text-subtle hover:text-ink cursor-pointer"
               aria-label="Clear fleet search"
             >
-              <X className="w-4 h-4" aria-hidden="true" />
+              <X className="w-3.5 h-3.5" aria-hidden="true" />
             </button>
+          ) : (
+            <kbd className="hidden sm:flex absolute right-2.5 top-1/2 -translate-y-1/2 items-center justify-center h-5 px-1.5 rounded bg-wash border border-line text-label font-mono text-muted select-none pointer-events-none">
+              /
+            </kbd>
           )}
         </div>
       </div>
 
-      <ul ref={listRef} onKeyDown={onListKey} className="flex-1 min-h-0 overflow-y-auto custom-scrollbar px-2 pb-3">
+      <ul ref={listRef} onKeyDown={onListKey} className="flex-1 min-h-0 overflow-y-auto custom-scrollbar px-2 py-2.5">
         {groups.map((group) => (
-          <li key={group.id} className="mt-3 first:mt-0">
-            <h3 className="flex items-baseline justify-between px-2 pt-1 pb-1.5 text-[11px] font-semibold uppercase tracking-[0.06em] text-subtle">
+          <li key={group.id} className="mt-2.5 first:mt-0">
+            <h3 className="flex items-baseline justify-between px-2 pt-1 pb-1 text-meta font-bold text-muted uppercase tracking-wider">
               {group.title}
-              <span className="tabular-nums">{group.items.length}</span>
+              <span className="tabular-nums text-label font-mono bg-wash px-1.5 py-0.5 rounded text-muted">{group.items.length}</span>
             </h3>
-            <ul>
+            <ul className="mt-1 space-y-1.5">
               {group.items.map((item) => {
                 const isSelected = item.machine_id === selectedId;
                 const status = statusMeta(item.status);
                 const isFault = item.status.toLowerCase() === "fault";
-                const isException = rank(item) < 2;
+                const isMaint = item.status.toLowerCase() === "maintenance";
                 const isOverdue = item.operating_hours > OVERHAUL_THRESHOLD;
+                const hourPct = Math.min(100, Math.round((item.operating_hours / OVERHAUL_THRESHOLD) * 100));
 
                 return (
                   <li key={item.machine_id}>
@@ -116,32 +168,61 @@ export function FleetRegisterPanel({
                       type="button"
                       onClick={() => onSelect(item.machine_id)}
                       data-asset={item.machine_id}
-                      aria-pressed={isSelected}
+                      aria-current={isSelected ? "true" : undefined}
                       aria-label={`${item.name}, ${item.machine_id}, ${item.location}, ${status.label}, ${item.operating_hours.toLocaleString()} run hours${isOverdue ? ", service overdue" : ""}`}
-                      className={`w-full grid grid-cols-[minmax(0,1fr)_auto] gap-x-3 items-center min-h-[52px] px-2 py-2 text-left rounded-md cursor-pointer transition-colors focus-visible:outline-offset-[-2px] ${
-                        isSelected ? "bg-accent-bg shadow-[inset_3px_0_0_var(--color-accent)]" : "hover:bg-sunken"
+                      className={`w-full flex items-center gap-2.5 p-2 text-left rounded-xl cursor-pointer transition-all focus-visible:outline-offset-[-2px] border ${
+                        isSelected
+                          ? "bg-blue-50/90 border-2 border-blue-600 ring-2 ring-blue-500/20 shadow-xs"
+                          : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/80"
                       }`}
                     >
-                      <span className="min-w-0">
-                        <span className={`block text-[14px] font-medium truncate ${isSelected ? "text-accent-ink" : "text-ink"}`}>
-                          {item.name}
-                        </span>
-                        <span className="block font-mono text-[12px] text-muted">{item.machine_id}</span>
-                      </span>
-                      <span className="flex flex-col items-end">
-                        {isException && (
-                          <span className={`flex items-center gap-1.5 text-[12px] font-medium ${isFault ? "text-danger" : "text-warn"}`}>
-                            <span className={`w-1.5 h-1.5 rounded-full ${status.dot}`} aria-hidden="true" />
-                            {status.label}
+                      {/* Bespoke CAD vector equipment schematic */}
+                      <EquipmentSchematicIcon
+                        machineId={item.machine_id}
+                        name={item.name}
+                        type={item.type}
+                        status={item.status}
+                        size="sm"
+                      />
+
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between gap-1">
+                          <span className={`block text-small font-bold truncate leading-tight ${isSelected ? "text-blue-900 font-extrabold" : "text-slate-900"}`}>
+                            {item.name}
                           </span>
-                        )}
-                        <span
-                          className={`text-[12px] tabular-nums ${isOverdue ? "text-warn" : "text-muted"}`}
-                          title={isOverdue ? `Past the ${OVERHAUL_THRESHOLD.toLocaleString()} h service interval` : "Run hours"}
-                        >
-                          {item.operating_hours.toLocaleString()} h
-                        </span>
-                      </span>
+                          {isFault ? (
+                            <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-red-50 text-red-700 border border-red-200 shrink-0">
+                              <span className="text-[8px]">◆</span> Fault
+                            </span>
+                          ) : isMaint ? (
+                            <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200 shrink-0">
+                              <span className="text-[8px]">◆</span> Maint
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 shrink-0">
+                              <span className="w-1.5 h-1.5 rounded-full bg-status-ok" /> Running
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="flex items-center gap-1 mt-0.5 text-meta text-muted min-w-0">
+                          <span className="font-mono text-[11px] font-medium text-slate-500 whitespace-nowrap shrink-0">{item.machine_id}</span>
+                          <span className="text-faint shrink-0" aria-hidden="true">·</span>
+                          <span className="truncate text-[11px]" title={formatLocation(item.location)}>{formatLocation(item.location)}</span>
+                        </div>
+
+                        <div className="flex items-center justify-between gap-2 mt-1">
+                          <span className={`text-label font-mono tabular-nums ${isOverdue ? "font-bold text-danger" : "text-muted"}`}>
+                            {item.operating_hours.toLocaleString()} h
+                          </span>
+                          <div className="w-14 h-1 rounded-full bg-wash overflow-hidden shrink-0">
+                            <div
+                              className={`h-full rounded-full ${isOverdue ? "bg-status-fault" : hourPct >= 80 ? "bg-status-maint" : "bg-accent"}`}
+                              style={{ width: `${hourPct}%` }}
+                            />
+                          </div>
+                        </div>
+                      </div>
                     </button>
                   </li>
                 );
@@ -152,14 +233,23 @@ export function FleetRegisterPanel({
 
         {filtered.length === 0 && (
           <li className="px-6 py-10 text-center" role="status">
-            <p className="text-[13px] font-medium text-ink">No assets match "{searchFilter.trim()}".</p>
-            <p className="text-[12px] text-muted mt-1">Search by asset ID, model name, or location.</p>
+            <p className="text-small font-medium text-ink">
+              {q && statusFilter
+                ? `No ${statusMeta(statusFilter).label.toLowerCase()} assets match "${searchFilter.trim()}".`
+                : q
+                  ? `No assets match "${searchFilter.trim()}".`
+                  : `No assets are in ${statusMeta(statusFilter ?? "").label.toLowerCase()} right now.`}
+            </p>
+            <p className="text-meta text-muted mt-1">{q ? "Search by asset ID, model name, or location." : "Clear the filter to see the whole fleet."}</p>
             <button
               type="button"
-              onClick={() => onSearchChange("")}
-              className="mt-3 min-h-[40px] px-4 rounded-lg border border-line-strong text-[13px] font-medium text-ink hover:bg-sunken cursor-pointer"
+              onClick={() => {
+                onSearchChange("");
+                onStatusFilterChange?.(null);
+              }}
+              className="mt-3 min-h-[40px] px-4 rounded-md border border-line-strong text-small font-medium text-ink hover:bg-sunken cursor-pointer"
             >
-              Clear search
+              {q && statusFilter ? "Clear search and filter" : q ? "Clear search" : "Clear filter"}
             </button>
           </li>
         )}

@@ -19,6 +19,8 @@ interface OperatingHoursBarChartProps {
 }
 
 const TOP_N = 5;
+const CRITICALITY_RANK: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3 };
+type SortKey = "hours" | "criticality";
 
 const CRITICALITY: Record<string, string> = {
   critical: "bg-danger-bg text-danger-ink",
@@ -35,19 +37,35 @@ function wearBar(hours: number): string {
 /** Assets ranked by operating hours, with criticality, so the next service candidates stand out. */
 export function OperatingHoursBarChart({ equipment, onSelectEquipment, selectedMachineId }: OperatingHoursBarChartProps) {
   const [showAll, setShowAll] = useState(false);
-  const ranked = [...equipment].sort((a, b) => b.operating_hours - a.operating_hours);
+  const [sortKey, setSortKey] = useState<SortKey>("hours");
+  const byHours = (a: EquipmentData, b: EquipmentData) => b.operating_hours - a.operating_hours;
+  const ranked = [...equipment].sort(
+    sortKey === "hours"
+      ? byHours
+      : (a, b) => (CRITICALITY_RANK[a.criticality.toLowerCase()] ?? 4) - (CRITICALITY_RANK[b.criticality.toLowerCase()] ?? 4) || byHours(a, b)
+  );
   const rows = showAll ? ranked : ranked.slice(0, TOP_N);
   const max = Math.max(OVERHAUL_THRESHOLD, ...ranked.map((e) => e.operating_hours));
   const limitPct = (OVERHAUL_THRESHOLD / max) * 100;
   const overdue = ranked.filter((e) => e.operating_hours > OVERHAUL_THRESHOLD).length;
 
   return (
-    <section aria-labelledby="hours-wear-heading" className="h-full flex flex-col bg-panel border border-line rounded-xl shadow-[var(--shadow-tinted-xs)] p-5">
-      <div className="flex items-baseline justify-between gap-3">
-        <h2 id="hours-wear-heading" className="text-[16px] font-semibold text-ink">Operating hours &amp; wear</h2>
-        <span className="text-[13px] text-muted">{showAll ? "All assets" : "Top assets by hours"}</span>
+    <section aria-labelledby="hours-wear-heading" className="h-full flex flex-col bg-panel rounded-lg border border-line-strong/70 shadow-[var(--shadow-cockpit)] p-5">
+      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+        <h2 id="hours-wear-heading" className="text-title font-semibold text-ink whitespace-nowrap">Operating hours &amp; wear</h2>
+        <label className="flex items-center gap-1.5 text-small text-muted">
+          <span className="sr-only sm:not-sr-only">Sort</span>
+          <select
+            value={sortKey}
+            onChange={(e) => setSortKey(e.target.value as SortKey)}
+            className="min-h-[32px] pointer-coarse:min-h-[44px] pl-2 pr-7 rounded-md border border-line-strong bg-panel text-small text-ink cursor-pointer"
+          >
+            <option value="hours">Most run hours</option>
+            <option value="criticality">Criticality</option>
+          </select>
+        </label>
       </div>
-      <p className={`inline-flex items-center gap-1.5 text-[13px] mt-1 ${overdue ? "text-danger" : "text-muted"}`}>
+      <p className={`inline-flex items-center gap-1.5 text-small mt-1 ${overdue ? "text-danger" : "text-muted"}`}>
         {overdue > 0 && <TriangleAlert className="w-4 h-4 shrink-0" aria-hidden="true" />}
         {overdue > 0
           ? `${overdue} overdue · ${OVERHAUL_THRESHOLD.toLocaleString()} h limit`
@@ -55,7 +73,7 @@ export function OperatingHoursBarChart({ equipment, onSelectEquipment, selectedM
       </p>
 
       {rows.length === 0 ? (
-        <p className="flex-1 mt-4 text-[13px] text-muted">No assets to rank yet.</p>
+        <p className="flex-1 mt-4 text-small text-muted">No assets to rank yet.</p>
       ) : (
         <ol className={`flex-1 mt-3 -mx-2 ${showAll ? "max-h-[360px] overflow-y-auto custom-scrollbar" : ""}`}>
           {rows.map((eq) => {
@@ -72,10 +90,10 @@ export function OperatingHoursBarChart({ equipment, onSelectEquipment, selectedM
                     selected ? "bg-sunken" : ""
                   }`}
                 >
-                  <span className="flex items-center gap-2 text-[14px]">
+                  <span className="flex items-center gap-2 text-copy">
                     <span className="font-mono font-semibold text-ink shrink-0">{eq.machine_id}</span>
                     <span className="text-muted truncate">{eq.name}</span>
-                    <span className={`ml-auto shrink-0 inline-flex h-6 items-center px-2 rounded-md text-[12px] font-medium capitalize ${CRITICALITY[crit] ?? CRITICALITY.low}`}>
+                    <span className={`ml-auto shrink-0 inline-flex h-6 items-center px-2 rounded-md text-meta font-medium capitalize ${CRITICALITY[crit] ?? CRITICALITY.low}`}>
                       {crit}
                     </span>
                     <span className="w-[76px] shrink-0 text-right font-semibold text-ink tabular-nums">
@@ -103,7 +121,7 @@ export function OperatingHoursBarChart({ equipment, onSelectEquipment, selectedM
       )}
 
       {ranked.length > TOP_N && (
-        <div className="mt-3 pt-3 border-t border-line flex justify-end text-[13px]">
+        <div className="mt-3 pt-3 border-t border-line flex justify-end text-small">
           <button
             type="button"
             onClick={() => setShowAll((v) => !v)}

@@ -11,7 +11,7 @@ import {
   Lock,
   Clock,
 } from "lucide-react";
-import type { AuthUser } from "../api/auth";
+import { notifySessionExpired, type AuthUser } from "../api/auth";
 
 export interface PendingActionPayload {
   action_id: string;
@@ -68,6 +68,10 @@ export function ActionApprovalCard({
         headers,
       });
 
+      if (resp.status === 401) {
+        notifySessionExpired();
+        throw new Error("Your session expired. Sign in again to record this decision.");
+      }
       if (!resp.ok) {
         const errJson = await resp.json().catch(() => ({}));
         throw new Error(errJson.detail || `Approval failed (status ${resp.status})`);
@@ -102,6 +106,10 @@ export function ActionApprovalCard({
         body: JSON.stringify({ reason: rejectionReason || "Declined by supervisor" }),
       });
 
+      if (resp.status === 401) {
+        notifySessionExpired();
+        throw new Error("Your session expired. Sign in again to record this decision.");
+      }
       if (!resp.ok) {
         const errJson = await resp.json().catch(() => ({}));
         throw new Error(errJson.detail || `Rejection failed (status ${resp.status})`);
@@ -158,20 +166,14 @@ export function ActionApprovalCard({
 
   return (
     <div
-      className={`my-2 rounded-lg bg-panel border border-line border-l-[3px] text-[13px] text-ink ${
-        decisionState === "approved"
-          ? "border-l-status-ok"
-          : decisionState === "rejected"
-          ? "border-l-status-fault"
-          : "border-l-status-maint"
-      }`}
+      className="my-2 rounded-lg bg-panel border border-line-strong/70 text-small text-ink"
     >
       <div className="px-4 pt-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
-        <h4 className="flex items-center gap-2 text-[14px] font-semibold text-ink">
+        <h4 className="flex items-center gap-2 text-copy font-semibold text-ink">
           <span aria-hidden="true">{getActionIcon()}</span>
           {formatActionTitle()}
         </h4>
-        <span role="status" className="text-[12px] font-semibold">
+        <span role="status" className="text-meta font-semibold">
           {decisionState === "pending" && (
             <span className="inline-flex items-center gap-1.5 text-warn">
               {canDecide ? (
@@ -198,26 +200,26 @@ export function ActionApprovalCard({
       </div>
 
       <div className="px-4 pb-3 pt-2 space-y-3">
-        {action.summary && <p className="text-[14px] text-body leading-relaxed max-w-[65ch]">{action.summary}</p>}
+        {action.summary && <p className="text-copy text-body leading-relaxed max-w-[65ch]">{action.summary}</p>}
 
         {(fields.length > 0 || args.description) && (
           <dl className="grid grid-cols-2 @min-[480px]:grid-cols-4 gap-x-4 gap-y-2">
             {fields.map(({ label, value }) => (
               <div key={label} className="min-w-0">
-                <dt className="text-[12px] text-muted">{label}</dt>
+                <dt className="text-meta text-muted">{label}</dt>
                 <dd className="font-semibold text-ink truncate">{value}</dd>
               </div>
             ))}
             {args.description && (
               <div className="col-span-full">
-                <dt className="text-[12px] text-muted">Scope</dt>
+                <dt className="text-meta text-muted">Scope</dt>
                 <dd className="text-body leading-relaxed">{args.description}</dd>
               </div>
             )}
           </dl>
         )}
 
-        <p className="text-[12px] text-muted">
+        <p className="text-meta text-muted">
           Requested by{" "}
           <span className="font-medium text-body">{isOwnRequest ? "you" : action.requester || "technician"}</span>
           {!isOwnRequest && action.requester_role ? ` (${action.requester_role})` : ""}
@@ -242,7 +244,7 @@ export function ActionApprovalCard({
                 <button
                   type="button"
                   onClick={onOpenAuth}
-                  className="min-h-[40px] px-4 rounded-md border border-accent text-accent-ink hover:bg-accent-bg text-[13px] font-semibold transition-colors shrink-0 cursor-pointer"
+                  className="min-h-[40px] px-4 rounded-md border border-accent text-accent-ink hover:bg-accent-bg text-small font-semibold transition-colors shrink-0 cursor-pointer"
                 >
                   Sign in
                 </button>
@@ -256,7 +258,7 @@ export function ActionApprovalCard({
               </p>
             ) : showRejectInput ? (
               <div className="space-y-2">
-                <label htmlFor={`reject-reason-${action.action_id}`} className="block text-[13px] font-semibold text-body">
+                <label htmlFor={`reject-reason-${action.action_id}`} className="block text-small font-semibold text-body">
                   Reason for rejection
                 </label>
                 <input
@@ -265,14 +267,14 @@ export function ActionApprovalCard({
                   value={rejectionReason}
                   onChange={(e) => setRejectionReason(e.target.value)}
                   placeholder="e.g. Schedule conflict, parts not in stock"
-                  className="w-full min-h-[44px] px-3 bg-panel border border-line-strong rounded-md text-[14px] placeholder:text-subtle focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/15"
+                  className="w-full min-h-[44px] px-3 bg-panel border border-line-strong rounded-md text-copy placeholder:text-subtle focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/15"
                 />
                 <div className="flex items-center justify-end gap-2 pt-1">
                   <button
                     type="button"
                     onClick={() => setShowRejectInput(false)}
                     disabled={submitting}
-                    className="min-h-[40px] px-4 rounded-md text-[13px] font-semibold text-muted hover:text-ink hover:bg-wash transition-colors cursor-pointer disabled:opacity-50"
+                    className="min-h-[40px] px-4 rounded-md text-small font-semibold text-muted hover:text-ink hover:bg-wash transition-colors cursor-pointer disabled:opacity-50"
                   >
                     Cancel
                   </button>
@@ -280,7 +282,7 @@ export function ActionApprovalCard({
                     type="button"
                     onClick={handleReject}
                     disabled={submitting}
-                    className="min-h-[40px] px-4 rounded-md bg-danger hover:bg-danger-ink text-white text-[13px] font-semibold transition-colors cursor-pointer disabled:opacity-50"
+                    className="min-h-[40px] px-4 rounded-md bg-danger-solid hover:bg-danger-solid-hover text-white text-small font-semibold transition-colors cursor-pointer disabled:opacity-50"
                   >
                     {submitting ? "Rejecting…" : "Confirm rejection"}
                   </button>
@@ -292,7 +294,7 @@ export function ActionApprovalCard({
                   type="button"
                   onClick={() => setShowRejectInput(true)}
                   disabled={submitting}
-                  className="inline-flex items-center gap-1.5 min-h-[40px] px-4 rounded-md border border-line-strong text-danger hover:bg-danger-bg transition-colors font-semibold text-[13px] cursor-pointer disabled:opacity-50"
+                  className="inline-flex items-center gap-1.5 min-h-[40px] px-4 rounded-md border border-line-strong text-danger hover:bg-danger-bg transition-colors font-semibold text-small cursor-pointer disabled:opacity-50"
                 >
                   <Ban className="w-4 h-4" aria-hidden="true" />
                   Reject
@@ -301,7 +303,7 @@ export function ActionApprovalCard({
                   type="button"
                   onClick={handleApprove}
                   disabled={submitting}
-                  className="inline-flex items-center gap-1.5 min-h-[40px] px-4 rounded-md bg-success hover:bg-success-ink text-white font-semibold text-[13px] transition-colors cursor-pointer disabled:opacity-50"
+                  className="inline-flex items-center gap-1.5 min-h-[40px] px-4 rounded-md bg-success-solid hover:bg-success-solid-hover text-white font-semibold text-small transition-colors cursor-pointer disabled:opacity-50"
                 >
                   <ShieldCheck className="w-4 h-4" aria-hidden="true" />
                   {submitting ? "Approving…" : "Approve and execute"}
@@ -318,7 +320,7 @@ export function ActionApprovalCard({
               Approved by {approverName}
             </p>
             {actionResult && (
-              <p className="text-[12px] pl-[22px]">
+              <p className="text-meta pl-[22px]">
                 {actionResult.work_order_id && `Work order ${actionResult.work_order_id} created`}
                 {actionResult.inspection_id && `Inspection ${actionResult.inspection_id} booked`}
                 {actionResult.alarm_id && `Alarm ${actionResult.alarm_id} acknowledged`}
@@ -334,7 +336,7 @@ export function ActionApprovalCard({
               <XCircle className="w-4 h-4 shrink-0" aria-hidden="true" />
               Rejected by {approverName}
             </p>
-            {rejectionReason && <p className="text-[12px] pl-[22px]">Reason: {rejectionReason}</p>}
+            {rejectionReason && <p className="text-meta pl-[22px]">Reason: {rejectionReason}</p>}
           </div>
         )}
       </div>

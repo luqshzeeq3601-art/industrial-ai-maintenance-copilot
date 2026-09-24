@@ -4,6 +4,24 @@
   --font-sans: "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-mono: "Geist Mono", "SF Mono", Menlo, Monaco, Consolas, monospace;
 
+  /* Type scale. Components use these steps, never arbitrary px sizes. */
+  --text-label: 11px;    /* mono labels, badges, chart ticks */
+  --text-label--line-height: 1.45;
+  --text-meta: 12px;     /* timestamps, captions, helper text */
+  --text-meta--line-height: 1.5;
+  --text-small: 13px;    /* dense UI text, secondary controls */
+  --text-small--line-height: 1.5;
+  --text-copy: 14px;     /* body copy, primary controls */
+  --text-copy--line-height: 1.55;
+  --text-title: 16px;    /* panel titles, form inputs (no iOS zoom) */
+  --text-title--line-height: 1.4;
+  --text-heading: 22px;  /* page titles */
+  --text-heading--line-height: 1.2;
+  --text-display: 30px;  /* KPI values, asset name */
+  --text-display--line-height: 1.1;
+  --text-hero: 44px;     /* sign-in statement */
+  --text-hero--line-height: 1.06;
+
   /* Surfaces & neutrals (slate). Components use these names, never raw hex. */
   --color-paper: #f3f6fa;       /* app canvas behind panels (gray-blue) */
   --color-panel: #ffffff;       /* panel / card surface */
@@ -39,12 +57,22 @@
   --color-danger-bg: #fef2f2;
   --color-danger-line: #fecaca;
 
-  /* Status signal (dots, bars, andon) — always paired with a text label */
+  /* Solid fills under white text (buttons, count badges); kept >= 4.5:1 against #fff in both themes */
+  --color-accent-solid: #2563eb;
+  --color-accent-solid-hover: #1d4ed8;
+  --color-accent-solid-press: #1e40af;
+  --color-danger-solid: #b91c1c;
+  --color-danger-solid-hover: #991b1b;
+  --color-success-solid: #15803d;
+  --color-success-solid-hover: #166534;
+  --color-warn-solid: #b45309;
+
+  /* Status signal (dots, bars, andon), always paired with a text label */
   --color-status-ok: #16a34a;
   --color-status-maint: #f59e0b;
   --color-status-fault: #dc2626;
 
-  /* Categorical (charts only) — fault categories, deliberately distinct from status red/amber/green */
+  /* Categorical (charts only): fault categories, deliberately distinct from status red/amber/green */
   --color-category-electrical: #ea580c;
   --color-category-hydraulic: #2563eb;
   --color-category-mechanical: #1e3a5f;
@@ -54,15 +82,9 @@
   /* Tinted shadows (hue-matched, single light source: top) */
   --shadow-tinted-xs: 0 1px 2px rgba(47, 52, 55, 0.05);
   --shadow-tinted-md: 0 2px 6px rgba(47, 52, 55, 0.07), 0 12px 32px rgba(47, 52, 55, 0.1);
+  --shadow-cockpit: 0 1px 3px rgba(15, 23, 42, 0.08), 0 1px 2px rgba(15, 23, 42, 0.04);
+  --shadow-cockpit-elevated: 0 4px 12px -2px rgba(15, 23, 42, 0.08), 0 2px 6px -1px rgba(15, 23, 42, 0.04);
 
-  /* Sign-in page: sky wash + plant illustration depth bands */
-  --color-sky-top: #e6eef8;
-  --color-sky-low: #f5f8fc;
-  --color-plant-haze: #dfe8f3;
-  --color-plant-far: #cad8ea;
-  --color-plant-mid: #aebfd6;
-  --color-plant-near: #8ea4c1;
-  --color-plant-deep: #6f87a8;
 
   /* z-scale */
   --z-pop: 40;
@@ -71,6 +93,7 @@
 
 @layer base {
   html {
+    color-scheme: light;
     scroll-behavior: smooth;
   }
 
@@ -161,8 +184,23 @@
   }
 }
 
+@keyframes pulse-alarm {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.35;
+    transform: scale(0.9);
+  }
+}
+
 .animate-fade-in {
   animation: fade-in 0.2s ease both;
+}
+
+.animate-pulse-alarm {
+  animation: pulse-alarm 1.8s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
 /* Skeleton loader (replaces generic spinner for content shapes) */
@@ -196,6 +234,29 @@
   scrollbar-color: var(--color-line-strong) transparent;
 }
 
+/* Tooltip for icon-only controls: shows on hover and keyboard focus, and names nothing new for screen readers. */
+.tooltip {
+  position: absolute;
+  left: calc(100% + 8px);
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: var(--z-pop);
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: var(--color-deck);
+  color: #fff;
+  font-size: var(--text-meta);
+  font-weight: 500;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.12s ease;
+}
+.group:hover > .tooltip,
+.group:focus-visible > .tooltip {
+  opacity: 1;
+}
+
 /* Reduced motion respect */
 @media (prefers-reduced-motion: reduce) {
   html {
@@ -203,7 +264,9 @@
   }
   .animate-fade-in,
   .skeleton,
-  .animate-spin {
+  .animate-spin,
+  .animate-pulse,
+  .animate-pulse-alarm {
     animation: none;
   }
   *,

@@ -288,6 +288,8 @@ npm run dev
 ```
 Open [http://localhost:3000](http://localhost:3000). Set `VITE_API_URL=http://localhost:8000` if the API is remote. Refresh the typed contract with `npm run openapi` (regenerates from `/openapi.json` into `src/api/types.ts`).
 
+In development, labelled sample data stands in when the API is unreachable. Production builds show the real error instead; set `VITE_DEMO_DATA=true` (sample data) or `VITE_DEMO_SIGNIN=true` (one-click demo accounts) only for demo deployments. Run the UI tests with `npm test`.
+
 ### 5. Docker Compose profiles
 ```bash
 docker compose up --build                                   # backend + frontend + ollama
@@ -397,7 +399,7 @@ Enforced by `.gitignore`. Verify with `git check-ignore -v .env backend/app/data
 
 ## Contributing
 
-- Branch from `master`, keep PRs focused; run `pytest backend/tests/ -q -m "not slow"` plus `npm run lint` / `npm run build` in `frontend/` for UI changes.
+- Branch from `master`, keep PRs focused; run `pytest backend/tests/ -q -m "not slow"` plus `npm run lint` / `npm test` / `npm run build` in `frontend/` for UI changes.
 - API changes require regenerating `docs/api/openapi.json` and `frontend/src/api/types.ts` (see `frontend/package.json:openapi` script); contract covered by `backend/tests/test_api_contract.py`.
 - Docs follow `docs/README.md` conventions: Markdown, ASCII headings (no emoji in H1/H2), forward-slash paths, `file:line` code refs.
 - Decisions live in `docs/adr/`, history in `CHANGELOG.md`, owners in `CODEOWNERS`.

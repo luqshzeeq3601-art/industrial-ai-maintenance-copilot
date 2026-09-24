@@ -4,6 +4,9 @@ interface FaultDistributionChartProps {
   categories: Array<{ category: string; count: number }>;
   incidents: Array<{ category: string; occurrences: number; total_downtime_mins: number }>;
   severities: Array<{ severity: string; count: number }>;
+  /** Reporting period the repair counts cover, e.g. "30 days". */
+  periodLabel?: string;
+  periodDelta?: React.ReactNode;
 }
 
 const CATEGORY: Record<string, { label: string; icon: LucideIcon; color: string }> = {
@@ -23,21 +26,29 @@ const SEVERITY_STYLE: Record<string, string> = {
 };
 
 /** Repairs logged per fault category, plus the severity mix of known fault codes. */
-export function FaultDistributionChart({ categories, incidents, severities }: FaultDistributionChartProps) {
+export function FaultDistributionChart({ categories, incidents, severities, periodLabel, periodDelta }: FaultDistributionChartProps) {
   const totalCodes = categories.reduce((sum, c) => sum + c.count, 0);
   const rows = [...incidents].sort((a, b) => b.occurrences - a.occurrences);
   const max = Math.max(1, ...rows.map((r) => r.occurrences));
   const sev = SEVERITY_ORDER.map((s) => ({ s, n: severities.find((x) => x.severity === s)?.count ?? 0 }));
 
   return (
-    <section aria-labelledby="fault-ledger-heading" className="h-full flex flex-col bg-panel border border-line rounded-xl shadow-[var(--shadow-tinted-xs)] p-5">
+    <section aria-labelledby="fault-ledger-heading" className="h-full flex flex-col bg-panel rounded-xl border border-line-strong/70 shadow-[var(--shadow-cockpit)] p-5">
       <div className="flex items-baseline justify-between gap-3">
-        <h2 id="fault-ledger-heading" className="text-[16px] font-semibold text-ink">Repairs by fault type</h2>
-        <span className="text-[13px] text-muted tabular-nums">{totalCodes} fault codes</span>
+        <h2 id="fault-ledger-heading" className="text-title font-semibold text-ink">Repairs by fault type</h2>
+        <div className="flex items-center gap-2">
+          {periodDelta ? (
+            <span className="text-small text-muted">{periodDelta}</span>
+          ) : periodLabel ? (
+            <span className="text-small text-muted">{periodLabel}</span>
+          ) : null}
+          <span className="text-small text-muted tabular-nums">{totalCodes} fault codes</span>
+        </div>
       </div>
+      <p className="mt-1 text-small text-muted">{totalCodes} known fault codes; bars count repairs logged against them.</p>
 
       {rows.length === 0 ? (
-        <p className="flex-1 mt-4 text-[13px] text-muted">No repairs are logged against known fault codes yet.</p>
+        <p className="flex-1 mt-4 text-small text-muted">No repairs were logged against known fault codes in this period.</p>
       ) : (
         <ul className="flex-1 mt-4 space-y-3.5">
           {rows.map((row) => {
@@ -47,7 +58,7 @@ export function FaultDistributionChart({ categories, incidents, severities }: Fa
             return (
               <li
                 key={row.category}
-                className="grid grid-cols-[132px_minmax(0,1fr)_40px] items-center gap-3 text-[14px]"
+                className="grid grid-cols-[132px_minmax(0,1fr)_40px] items-center gap-3 text-copy"
                 title={`${row.occurrences} repairs, ${hours.toLocaleString()} h downtime`}
               >
                 <span className="flex items-center gap-2 min-w-0 text-body">
@@ -71,10 +82,10 @@ export function FaultDistributionChart({ categories, incidents, severities }: Fa
       )}
 
       <div className="mt-4 pt-3 border-t border-line">
-        <p className="text-[13px] text-muted">Fault codes by severity</p>
+        <p className="text-small text-muted">Fault codes by severity</p>
         <ul className="mt-2 flex flex-wrap gap-2">
           {sev.map(({ s, n }) => (
-            <li key={s} className={`inline-flex items-center gap-2 h-7 px-2.5 rounded-md text-[13px] font-medium capitalize ${SEVERITY_STYLE[s]}`}>
+            <li key={s} className={`inline-flex items-center gap-2 h-7 px-2.5 rounded-md text-small font-medium capitalize ${SEVERITY_STYLE[s]}`}>
               {s}
               <span className="font-semibold tabular-nums">{n}</span>
             </li>

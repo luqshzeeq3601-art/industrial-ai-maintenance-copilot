@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { CircleAlert, Inbox, RefreshCw } from "lucide-react";
 import { ActionApprovalCard, type PendingActionPayload } from "../ActionApprovalCard";
-import type { AuthUser } from "../../api/auth";
+import { notifySessionExpired, type AuthUser } from "../../api/auth";
 
 interface QueuedAction extends PendingActionPayload {
   requested_at?: string;
@@ -32,6 +32,10 @@ export function ApprovalsQueueView({ apiBase, currentUser, onCountChange }: Appr
   const fetchQueue = useCallback(async () => {
     try {
       const resp = await fetch(`${apiBase}/api/v1/actions/pending`, { credentials: "include" });
+      if (resp.status === 401) {
+        notifySessionExpired();
+        throw new Error("Your session expired. Sign in again to see the approval queue.");
+      }
       if (!resp.ok) {
         const body = await resp.json().catch(() => ({}));
         throw new Error(body.detail || `Couldn't load the approval queue (status ${resp.status}).`);
@@ -73,8 +77,8 @@ export function ApprovalsQueueView({ apiBase, currentUser, onCountChange }: Appr
       <div className="max-w-[880px] mx-auto">
         <div className="flex flex-wrap items-end justify-between gap-3 mb-4">
           <div>
-            <h1 className="text-[20px] font-semibold text-ink tracking-tight">Approvals</h1>
-            <p className="text-[14px] text-muted">
+            <h1 className="text-heading font-semibold text-ink tracking-tight">Approvals</h1>
+            <p className="text-copy text-muted">
               {loading
                 ? "Loading requests…"
                 : waiting === 0
@@ -86,7 +90,7 @@ export function ApprovalsQueueView({ apiBase, currentUser, onCountChange }: Appr
             type="button"
             onClick={refresh}
             disabled={loading}
-            className="inline-flex items-center gap-1.5 min-h-[40px] pointer-coarse:min-h-[44px] px-3 rounded-md border border-line-strong bg-panel text-[13px] font-semibold text-body hover:bg-wash hover:text-ink transition-colors cursor-pointer disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 min-h-[40px] pointer-coarse:min-h-[44px] px-3 rounded-md border border-line-strong bg-panel text-small font-semibold text-body hover:bg-wash hover:text-ink transition-colors cursor-pointer disabled:opacity-50"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin motion-reduce:animate-none" : ""}`} aria-hidden="true" />
             Refresh
@@ -94,17 +98,17 @@ export function ApprovalsQueueView({ apiBase, currentUser, onCountChange }: Appr
         </div>
 
         {error && (
-          <p className="flex items-start gap-2 p-3 mb-4 rounded-md bg-danger-bg border border-danger-line text-danger-ink text-[14px]" role="alert">
+          <p className="flex items-start gap-2 p-3 mb-4 rounded-md bg-danger-bg border border-danger-line text-danger-ink text-copy" role="alert">
             <CircleAlert className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />
             {error}
           </p>
         )}
 
         {!loading && !error && actions.length === 0 && (
-          <div className="flex flex-col items-center text-center gap-2 py-16 px-4 bg-panel border border-line rounded-xl">
+          <div className="flex flex-col items-center text-center gap-2 py-16 px-4 bg-panel border border-line-strong/70 rounded-lg">
             <Inbox className="w-8 h-8 text-subtle" aria-hidden="true" />
-            <p className="text-[15px] font-semibold text-ink">No requests waiting</p>
-            <p className="text-[14px] text-muted max-w-[48ch]">
+            <p className="text-copy font-semibold text-ink">No requests waiting</p>
+            <p className="text-copy text-muted max-w-[48ch]">
               When a technician asks the copilot to create a work order, book an inspection, or acknowledge an alarm, the
               request appears here.
             </p>
@@ -115,7 +119,7 @@ export function ApprovalsQueueView({ apiBase, currentUser, onCountChange }: Appr
           {actions.map((action) => (
             <li key={action.action_id}>
               {action.requested_at && (
-                <p className="text-[12px] text-muted tabular-nums mb-1">
+                <p className="text-meta text-muted tabular-nums mb-1">
                   Requested {formatRequestedAt(action.requested_at)}
                 </p>
               )}

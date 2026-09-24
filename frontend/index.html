@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="light">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
@@ -8,7 +8,13 @@
       name="description"
       content="Maintenance Copilot — LangGraph multi-agent diagnostics, hybrid RAG over OEM manuals, and supervisor-approved work orders."
     />
-    <meta name="theme-color" content="#111827" />
+    <meta name="theme-color" content="#f3f6fa" />
+    <script>
+      try {
+        localStorage.removeItem("copilot-theme");
+        document.documentElement.dataset.theme = "light";
+      } catch (e) {}
+    </script>
     <meta property="og:title" content="Maintenance Copilot" />
     <meta
       property="og:description"
