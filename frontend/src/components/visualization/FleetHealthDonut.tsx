@@ -24,7 +24,7 @@ export function FleetHealthDonut({ distribution, totalUnits, selected, onSelect 
 
   return (
     <section aria-labelledby="fleet-health-heading" className="h-full flex flex-col bg-panel rounded-lg border border-line-strong/70 shadow-[var(--shadow-cockpit)] p-5">
-      <h2 id="fleet-health-heading" className="text-title font-semibold text-ink">Fleet health</h2>
+      <h2 id="fleet-health-heading" className="text-section font-semibold text-ink">Fleet health</h2>
 
       <div className="flex-1 mt-5 flex flex-col sm:flex-row lg:flex-col 2xl:flex-row items-center justify-center gap-6">
         <div className="relative shrink-0" style={{ width: size, height: size }}>
@@ -55,7 +55,7 @@ export function FleetHealthDonut({ distribution, totalUnits, selected, onSelect 
               })}
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <span className="text-heading font-semibold text-ink tabular-nums leading-none">{totalUnits}</span>
+            <span className="font-mono text-[26px] font-bold text-ink tabular-nums leading-none">{totalUnits}</span>
             <span className="text-small text-muted mt-1">units</span>
           </div>
         </div>

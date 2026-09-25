@@ -35,7 +35,7 @@ export function FaultDistributionChart({ categories, incidents, severities, peri
   return (
     <section aria-labelledby="fault-ledger-heading" className="h-full flex flex-col bg-panel rounded-xl border border-line-strong/70 shadow-[var(--shadow-cockpit)] p-5">
       <div className="flex items-baseline justify-between gap-3">
-        <h2 id="fault-ledger-heading" className="text-title font-semibold text-ink">Repairs by fault type</h2>
+        <h2 id="fault-ledger-heading" className="text-section font-semibold text-ink">Repairs by fault type</h2>
         <div className="flex items-center gap-2">
           {periodDelta ? (
             <span className="text-small text-muted">{periodDelta}</span>
@@ -71,7 +71,7 @@ export function FaultDistributionChart({ categories, incidents, severities, peri
                     style={{ width: `${(row.occurrences / max) * 100}%`, background: meta.color }}
                   />
                 </span>
-                <span className="text-right font-semibold text-ink tabular-nums">
+                <span className="text-right font-mono font-semibold text-ink tabular-nums text-meta">
                   {row.occurrences}
                   <span className="sr-only"> repairs, {hours} hours downtime</span>
                 </span>

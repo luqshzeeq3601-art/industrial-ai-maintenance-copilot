@@ -245,8 +245,8 @@ export default function App() {
             )}
 
             <div className="ml-auto shrink-0 flex items-center gap-2">
-              <div className="hidden sm:flex items-center gap-1.5 text-xs text-muted font-mono">
-                <span>Updated {new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}</span>
+              <div className="hidden sm:flex items-center gap-1.5 text-label text-muted">
+                <span>Updated <time className="font-mono tabular-nums">{new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}</time></span>
                 <button
                   type="button"
                   onClick={() => fleet.reload()}

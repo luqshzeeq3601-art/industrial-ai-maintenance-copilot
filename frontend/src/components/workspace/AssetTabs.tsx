@@ -42,7 +42,7 @@ export function FaultBanner({ machine, openLog, lastLog, logsLoading, busy, onCh
                 {severity ? `${severity.toUpperCase()} INTERLOCK` : "ACTIVE CRITICAL INTERLOCK"}
               </span>
             </div>
-            <h2 className="mt-2 text-base font-bold text-ink leading-snug tracking-tight font-display">{summary}</h2>
+            <h2 className="mt-2 text-title font-bold text-ink leading-snug tracking-tight">{summary}</h2>
             <p className="mt-1 text-small text-body leading-relaxed">
               {logsLoading
                 ? "Loading the work order record…"
@@ -59,7 +59,7 @@ export function FaultBanner({ machine, openLog, lastLog, logsLoading, busy, onCh
           type="button"
           onClick={onCheckAlarm}
           disabled={busy}
-          className="shrink-0 self-start @min-[540px]:self-center inline-flex items-center gap-1.5 min-h-[38px] px-4 rounded-lg font-semibold text-xs tracking-wide bg-red-600 text-white hover:bg-red-700 active:bg-red-800 shadow-xs transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+          className="shrink-0 self-start @min-[540px]:self-center inline-flex items-center gap-1.5 min-h-[38px] px-4 rounded-lg font-semibold text-label tracking-wide bg-red-600 text-white hover:bg-red-700 active:bg-red-800 shadow-xs transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
         >
           {code ? `Explain ${code}` : "Explain the fault"}
           <ChevronRight className="w-4 h-4 ml-0.5" aria-hidden="true" />
@@ -104,8 +104,8 @@ export function DiagnosticsTab({
   return (
     <div className="space-y-6">
       <section aria-labelledby="probes-heading">
-        <h2 id="probes-heading" className="text-sm font-bold text-ink">Run a check</h2>
-        <p className="text-xs text-muted mt-0.5">Automated diagnostic procedures and service audits. Answers appear in Overview.</p>
+        <h2 id="probes-heading" className="text-section font-semibold text-ink">Run a check</h2>
+        <p className="text-meta text-muted mt-0.5">Automated diagnostic procedures and service audits. Answers appear in Overview.</p>
         <ul className="mt-3.5 grid gap-3 @min-[720px]:grid-cols-3">
           {probes.map(({ icon: Icon, title, detail, run }) => {
             const isAlarm = title.toLowerCase().includes("alarm") || title.toLowerCase().includes("fault");
@@ -145,9 +145,9 @@ export function DiagnosticsTab({
       </section>
 
       <section aria-labelledby="trace-heading" className="pt-5 border-t border-line">
-        <h2 id="trace-heading" className="text-sm font-bold text-ink font-display">How the last answer was produced</h2>
+        <h2 id="trace-heading" className="text-section font-semibold text-ink">How the last answer was produced</h2>
         {trace.length === 0 ? (
-          <p className="text-meta text-muted mt-1.5 font-mono">No active trace. Run a check to inspect multi-agent orchestration steps.</p>
+          <p className="text-meta text-muted mt-1.5">No active trace. Run a check to inspect multi-agent orchestration steps.</p>
         ) : (
           <ol className="mt-3.5 space-y-2.5">
             {trace.map((step, i) => (
@@ -156,7 +156,7 @@ export function DiagnosticsTab({
                   {i + 1}
                 </span>
                 <span className="min-w-0">
-                  <span className="font-bold text-ink capitalize tracking-wide font-display">{step.agent}</span>
+                  <span className="font-semibold text-ink capitalize tracking-wide">{step.agent}</span>
                   <span className="block text-body mt-0.5 leading-relaxed text-small">{step.summary}</span>
                 </span>
               </li>

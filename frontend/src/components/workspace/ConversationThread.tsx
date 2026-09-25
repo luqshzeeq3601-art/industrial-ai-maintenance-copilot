@@ -70,7 +70,7 @@ export function ConversationThread({
               <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" aria-hidden="true" />
               <span>COPILOT DIAGNOSTIC DISPATCH • {assetName.toUpperCase()}</span>
             </div>
-            <h2 className="mt-2 text-title sm:text-heading font-semibold text-ink font-display">
+            <h2 className="mt-2 text-title sm:text-heading font-semibold text-ink">
               Ready for investigation. Select an automated procedure:
             </h2>
 
@@ -109,7 +109,7 @@ export function ConversationThread({
                             <Icon className="w-4 h-4" strokeWidth={2} aria-hidden="true" />
                           </div>
                           <div className="min-w-0 flex-1">
-                            <span className="block text-small sm:text-title font-semibold text-ink leading-tight truncate font-display">
+                            <span className="block text-small sm:text-title font-semibold text-ink leading-tight truncate">
                               {label}
                             </span>
                             <span className="block text-meta text-muted truncate mt-0.5">

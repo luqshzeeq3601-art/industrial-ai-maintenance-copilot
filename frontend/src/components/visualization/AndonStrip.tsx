@@ -84,7 +84,7 @@ export function AndonStrip({ equipment, selectedId, onSelect, filter, onFilterCh
     <section aria-labelledby="andon-heading" className="bg-panel rounded-xl border border-line-strong/70 shadow-[var(--shadow-cockpit)] p-4 sm:p-5">
       <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
         <div className="mr-auto flex items-baseline gap-2.5">
-          <h2 id="andon-heading" className="text-heading font-bold text-ink tracking-tight">Andon board</h2>
+          <h2 id="andon-heading" className="text-section font-semibold text-ink tracking-tight">Andon board</h2>
           <span className="text-small text-muted tabular-nums font-normal">{equipment.length} assets</span>
         </div>
 
@@ -184,7 +184,7 @@ export function AndonStrip({ equipment, selectedId, onSelect, filter, onFilterCh
                     <div className="min-w-0 flex-1">
                       {/* Machine ID and Status pill */}
                       <div className="flex items-center justify-between gap-1.5">
-                        <span className="font-mono text-label font-bold text-muted tracking-tight">
+                        <span className="font-mono text-label font-medium text-muted tracking-tight">
                           {eq.machine_id}
                         </span>
                         <span
@@ -197,7 +197,7 @@ export function AndonStrip({ equipment, selectedId, onSelect, filter, onFilterCh
                       </div>
 
                       {/* Equipment Name */}
-                      <p className="mt-1 text-small font-bold text-ink truncate group-hover:text-accent transition-colors leading-snug">
+                      <p className="mt-1 text-small font-semibold text-ink truncate group-hover:text-accent transition-colors leading-snug">
                         {eq.name}
                       </p>
 

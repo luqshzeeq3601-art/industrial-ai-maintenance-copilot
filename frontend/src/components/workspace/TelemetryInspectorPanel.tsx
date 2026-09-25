@@ -97,7 +97,7 @@ export function TelemetryInspectorPanel({
     >
       <section aria-labelledby="telemetry-heading" className="p-4">
         <div className="flex items-center justify-between gap-2">
-          <h2 id="telemetry-heading" className="text-sm font-bold text-ink tracking-tight">
+          <h2 id="telemetry-heading" className="text-small font-semibold text-ink">
             Telemetry inspector
           </h2>
           {demo ? (
@@ -105,7 +105,7 @@ export function TelemetryInspectorPanel({
           ) : (
             !telemetryLoading && (
               <span
-                className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-label font-mono font-semibold bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 shadow-xs"
+                className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-label font-medium bg-emerald-500/10 text-emerald-700 border border-emerald-500/20 shadow-xs"
                 title={feed.detail}
               >
                 <span className={`w-1.5 h-1.5 rounded-full ${feed.dot} animate-pulse`} aria-hidden="true" />
@@ -114,7 +114,7 @@ export function TelemetryInspectorPanel({
             )
           )}
         </div>
-        {!telemetryLoading && readings.length > 0 && <p className="mt-1 text-meta font-mono text-muted">{feed.detail}</p>}
+        {!telemetryLoading && readings.length > 0 && <p className="mt-1 text-meta text-muted">{feed.detail}</p>}
 
         {telemetryLoading ? (
           <div className="mt-3 grid grid-cols-2 gap-2" role="status" aria-label="Loading telemetry">
@@ -145,7 +145,7 @@ export function TelemetryInspectorPanel({
                       isAlert ? "bg-red-50/70 border-red-300" : "bg-sunken border-line"
                     }`}
                   >
-                    <div className="flex items-start justify-between gap-1 mb-1 text-label font-mono font-semibold uppercase tracking-wider text-muted truncate" title={label}>
+                    <div className="flex items-start justify-between gap-1 mb-1 text-label font-medium text-muted truncate" title={label}>
                       <span className="truncate">{label}</span>
                       <span className="shrink-0 font-normal">
                         <Sparkline values={r.history ?? []} severity={r.severity} />
@@ -154,8 +154,8 @@ export function TelemetryInspectorPanel({
 
                     <div className="mt-1">
                       <div className="flex items-baseline gap-1">
-                        <span className="text-lg font-bold font-mono text-ink tabular-nums leading-tight">{formatValue(r.value)}</span>
-                        <span className="text-meta font-mono text-muted">{formatUnit(r.unit)}</span>
+                        <span className="text-lg font-semibold font-mono text-ink tabular-nums leading-tight">{formatValue(r.value)}</span>
+                        <span className="text-meta text-muted">{formatUnit(r.unit)}</span>
                       </div>
 
                       {/* Severity scale: five discrete segments */}
@@ -167,7 +167,7 @@ export function TelemetryInspectorPanel({
                             return <span key={step} className={`h-1.5 flex-1 rounded-xs transition-colors ${active ? fill : "bg-line"}`} />;
                           })}
                         </div>
-                        <span className={`text-label font-mono font-semibold ${sev.text}`} aria-hidden="true">
+                        <span className={`text-label font-medium ${sev.text}`} aria-hidden="true">
                           {sev.label}
                         </span>
                       </div>
@@ -198,7 +198,7 @@ export function TelemetryInspectorPanel({
           type="button"
           onClick={onRunDiagnostic}
           disabled={busy}
-          className="w-full flex items-center justify-center gap-2 min-h-[42px] px-4 rounded-lg bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+          className="w-full flex items-center justify-center gap-2 min-h-[42px] px-4 rounded-lg bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-small font-semibold shadow-xs transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
         >
           <Play className="w-3.5 h-3.5 fill-current" aria-hidden="true" />
           Run diagnostic
@@ -207,7 +207,7 @@ export function TelemetryInspectorPanel({
           type="button"
           onClick={onViewSop}
           disabled={busy}
-          className="w-full flex items-center justify-center gap-2 min-h-[38px] px-4 rounded-lg border border-line bg-panel hover:bg-sunken text-ink text-xs font-semibold shadow-xs transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+          className="w-full flex items-center justify-center gap-2 min-h-[38px] px-4 rounded-lg border border-line bg-panel hover:bg-sunken text-ink text-small font-semibold shadow-xs transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
         >
           <FileText className="w-3.5 h-3.5 text-subtle shrink-0" aria-hidden="true" />
           <span className="truncate">{faultCode ? `Safety SOP for ${faultCode}` : "Safety SOP"}</span>
@@ -216,7 +216,7 @@ export function TelemetryInspectorPanel({
 
       <section aria-labelledby="work-orders-heading" className="p-4">
         <div className="flex items-center justify-between gap-2 mb-2">
-          <h2 id="work-orders-heading" className="text-sm font-bold text-ink tracking-tight">
+          <h2 id="work-orders-heading" className="text-small font-semibold text-ink">
             Recent work orders
           </h2>
           {onViewAllWorkOrders && logs.length > 0 && (

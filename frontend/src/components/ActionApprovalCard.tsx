@@ -169,7 +169,7 @@ export function ActionApprovalCard({
       className="my-2 rounded-lg bg-panel border border-line-strong/70 text-small text-ink"
     >
       <div className="px-4 pt-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
-        <h4 className="flex items-center gap-2 text-copy font-semibold text-ink">
+        <h4 className="flex items-center gap-2 text-title font-semibold text-ink">
           <span aria-hidden="true">{getActionIcon()}</span>
           {formatActionTitle()}
         </h4>
@@ -206,8 +206,8 @@ export function ActionApprovalCard({
           <dl className="grid grid-cols-2 @min-[480px]:grid-cols-4 gap-x-4 gap-y-2">
             {fields.map(({ label, value }) => (
               <div key={label} className="min-w-0">
-                <dt className="text-meta text-muted">{label}</dt>
-                <dd className="font-semibold text-ink truncate">{value}</dd>
+                <dt className="text-meta font-medium text-muted">{label}</dt>
+                <dd className="text-small font-semibold text-ink truncate">{value}</dd>
               </div>
             ))}
             {args.description && (

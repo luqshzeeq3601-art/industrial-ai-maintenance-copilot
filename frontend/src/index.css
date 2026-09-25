@@ -1,27 +1,34 @@
+/* Enterprise Operations Typography · Primary: Inter · Data/Technical: Geist Mono */
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --font-display: "Space Grotesk", "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --font-mono: "Geist Mono", "SF Mono", Menlo, Monaco, Consolas, monospace;
+  --font-sans: "Inter", "Segoe UI", Arial, sans-serif;
+  --font-display: "Inter", "Segoe UI", Arial, sans-serif;
+  --font-ui: "Inter", "Segoe UI", Arial, sans-serif;
+  --font-mono: "Geist Mono", "SFMono-Regular", Consolas, monospace;
+  --font-data: "Geist Mono", "SFMono-Regular", Consolas, monospace;
 
-  /* Type scale calibrated for Full HD Desktop (1920x1080) legibility & Hallmark 1.25 ratio */
-  --text-label: 12px;    /* badges, pill indicators, machine ID tags, chart ticks */
-  --text-label--line-height: 1.5;
-  --text-meta: 13px;     /* timestamps, captions, helper text, breadcrumbs */
-  --text-meta--line-height: 1.55;
-  --text-small: 14px;    /* dense UI text, navigation items, secondary controls */
-  --text-small--line-height: 1.55;
-  --text-copy: 15px;     /* body copy, chat answers, primary controls */
-  --text-copy--line-height: 1.6;
-  --text-title: 17px;    /* panel titles, form inputs, card section headers */
-  --text-title--line-height: 1.35;
-  --text-heading: 24px;  /* page titles, modal headlines */
-  --text-heading--line-height: 1.25;
-  --text-display: 34px;  /* KPI numbers, asset titles */
-  --text-display--line-height: 1.15;
-  --text-hero: 48px;     /* sign-in statements, major hero display */
-  --text-hero--line-height: 1.08;
+  /* Full HD Desktop (1920x1080) Typography Scale */
+  --text-label: 12px;        /* helper/metadata, badges, eyebrow tags */
+  --text-label--line-height: 16px;
+  --text-meta: 13px;         /* captions, helper text, breadcrumbs, table cells */
+  --text-meta--line-height: 18px;
+  --text-small: 14px;        /* dense UI text, navigation, buttons, controls */
+  --text-small--line-height: 20px;
+  --text-copy: 14px;         /* primary body copy, chat answers */
+  --text-copy--line-height: 21px;
+  --text-title: 16px;        /* card titles, form inputs, section subheaders */
+  --text-title--line-height: 22px;
+  --text-section: 18px;      /* section titles */
+  --text-section--line-height: 24px;
+  --text-heading: 26px;      /* asset / primary titles */
+  --text-heading--line-height: 32px;
+  --text-page-title: 30px;   /* page titles */
+  --text-page-title--line-height: 36px;
+  --text-display: 30px;      /* KPI numbers, asset titles */
+  --text-display--line-height: 36px;
+  --text-hero: 40px;         /* sign-in statements, major hero display */
+  --text-hero--line-height: 48px;
 
   /* Surfaces & neutrals (slate). Components use these names, never raw hex. */
   --color-paper: #f3f6fa;       /* app canvas behind panels (gray-blue) */
@@ -96,7 +103,7 @@
   html {
     color-scheme: light;
     scroll-behavior: smooth;
-    font-size: 16px;
+    font-size: 14px;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
@@ -109,16 +116,32 @@
     background-color: var(--color-paper);
     color: var(--color-ink);
     font-family: var(--font-sans);
-    line-height: 1.55;
+    font-size: var(--text-copy);
+    line-height: 1.5;
   }
 
-  h1,
-  h2,
-  h3,
-  h4 {
-    font-family: var(--font-display);
+  h1 {
+    font-family: var(--font-sans);
+    font-weight: 700;
     text-wrap: balance;
-    letter-spacing: -0.025em;
+    letter-spacing: -0.02em;
+  }
+
+  h2 {
+    font-family: var(--font-sans);
+    font-weight: 650;
+    text-wrap: balance;
+    letter-spacing: -0.015em;
+  }
+
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-sans);
+    font-weight: 600;
+    text-wrap: balance;
+    letter-spacing: -0.01em;
   }
 
   p,
@@ -127,11 +150,13 @@
   }
 
   .font-display {
-    font-family: var(--font-display);
+    font-family: var(--font-sans);
+    letter-spacing: -0.02em;
   }
 
-  /* Tabular numbers for telemetry */
-  .font-mono {
+  /* Monospace only for technical data: IDs, codes, telemetry, tabular values */
+  .font-mono,
+  .font-data {
     font-family: var(--font-mono);
     font-variant-numeric: tabular-nums;
   }
@@ -139,14 +164,16 @@
   /* Full HD Desktop (1920x1080) legibility enhancement */
   @media (min-width: 1440px) {
     :root {
-      --text-label: 12.5px;
-      --text-meta: 13.5px;
-      --text-small: 14.5px;
-      --text-copy: 16px;
-      --text-title: 18px;
+      --text-label: 12px;
+      --text-meta: 13px;
+      --text-small: 14px;
+      --text-copy: 14px;
+      --text-title: 16px;
+      --text-section: 18px;
       --text-heading: 26px;
-      --text-display: 36px;
-      --text-hero: 52px;
+      --text-page-title: 30px;
+      --text-display: 30px;
+      --text-hero: 42px;
     }
   }
 

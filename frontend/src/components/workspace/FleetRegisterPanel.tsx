@@ -149,7 +149,7 @@ export function FleetRegisterPanel({
       <ul ref={listRef} onKeyDown={onListKey} className="flex-1 min-h-0 overflow-y-auto custom-scrollbar px-2 py-2.5">
         {groups.map((group) => (
           <li key={group.id} className="mt-2.5 first:mt-0">
-            <h3 className="flex items-baseline justify-between px-2 pt-1 pb-1 text-meta font-bold text-muted uppercase tracking-wider">
+            <h3 className="flex items-baseline justify-between px-2 pt-1 pb-1 text-label font-semibold text-muted">
               {group.title}
               <span className="tabular-nums text-label font-mono bg-wash px-1.5 py-0.5 rounded text-muted">{group.items.length}</span>
             </h3>
@@ -187,19 +187,19 @@ export function FleetRegisterPanel({
 
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center justify-between gap-1">
-                          <span className={`block font-display text-small font-bold truncate leading-tight ${isSelected ? "text-blue-900 font-extrabold" : "text-slate-900"}`}>
+                          <span className={`block text-small font-semibold truncate leading-tight ${isSelected ? "text-blue-900 font-bold" : "text-slate-900"}`}>
                             {item.name}
                           </span>
                           {isFault ? (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-label font-bold bg-red-50 text-red-700 border border-red-200 shrink-0">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-label font-semibold bg-red-50 text-red-700 border border-red-200 shrink-0">
                               <span className="text-[10px]">◆</span> Fault
                             </span>
                           ) : isMaint ? (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-label font-bold bg-amber-50 text-amber-700 border border-amber-200 shrink-0">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-label font-semibold bg-amber-50 text-amber-700 border border-amber-200 shrink-0">
                               <span className="text-[10px]">◆</span> Maint
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-label font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 shrink-0">
+                            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-label font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 shrink-0">
                               <span className="w-1.5 h-1.5 rounded-full bg-status-ok" /> Running
                             </span>
                           )}

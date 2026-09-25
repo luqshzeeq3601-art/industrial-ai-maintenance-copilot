@@ -133,9 +133,9 @@ function KpiCard({ label, icon, iconBg = "bg-wash", tone = "text-ink", value, ca
               {icon}
             </div>
           )}
-          <p className="text-small font-semibold text-muted tracking-tight">{label}</p>
+          <p className="text-meta font-medium text-muted">{label}</p>
         </div>
-        <p className={`mt-3 text-display font-extrabold tracking-tight tabular-nums leading-none ${tone}`}>{value}</p>
+        <p className={`mt-3 text-[30px] font-bold tracking-tight font-mono tabular-nums leading-none ${tone}`}>{value}</p>
         <div className="mt-2 text-meta text-muted flex items-center gap-1">{caption}</div>
       </div>
       {chart && <div className="shrink-0 self-center">{chart}</div>}
@@ -291,7 +291,7 @@ export function AnalyticsDashboardView({ apiBase, equipmentList, demo = false, s
     <div className="mx-auto w-full max-w-[1440px] px-1 sm:px-2 py-2 space-y-5">
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="flex items-center gap-2 text-heading sm:text-display font-bold text-ink tracking-tight">
+          <h1 className="flex items-center gap-2 text-[30px] font-bold text-ink tracking-tight leading-9">
             Dashboard
             {isDemo && <DemoBadge />}
           </h1>

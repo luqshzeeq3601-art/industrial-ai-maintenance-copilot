@@ -52,7 +52,7 @@ export function OperatingHoursBarChart({ equipment, onSelectEquipment, selectedM
   return (
     <section aria-labelledby="hours-wear-heading" className="h-full flex flex-col bg-panel rounded-lg border border-line-strong/70 shadow-[var(--shadow-cockpit)] p-5">
       <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
-        <h2 id="hours-wear-heading" className="text-title font-semibold text-ink whitespace-nowrap">Operating hours &amp; wear</h2>
+        <h2 id="hours-wear-heading" className="text-section font-semibold text-ink whitespace-nowrap">Operating hours &amp; wear</h2>
         <label className="flex items-center gap-1.5 text-small text-muted">
           <span className="sr-only sm:not-sr-only">Sort</span>
           <select
@@ -91,12 +91,12 @@ export function OperatingHoursBarChart({ equipment, onSelectEquipment, selectedM
                   }`}
                 >
                   <span className="flex items-center gap-2 text-copy">
-                    <span className="font-mono font-semibold text-ink shrink-0">{eq.machine_id}</span>
-                    <span className="text-muted truncate">{eq.name}</span>
+                    <span className="font-mono text-meta font-semibold text-ink shrink-0 tabular-nums">{eq.machine_id}</span>
+                    <span className="text-small text-muted truncate">{eq.name}</span>
                     <span className={`ml-auto shrink-0 inline-flex h-6 items-center px-2 rounded-md text-meta font-medium capitalize ${CRITICALITY[crit] ?? CRITICALITY.low}`}>
                       {crit}
                     </span>
-                    <span className="w-[76px] shrink-0 text-right font-semibold text-ink tabular-nums">
+                    <span className="w-[76px] shrink-0 text-right font-mono font-semibold text-ink tabular-nums text-meta">
                       {eq.operating_hours.toLocaleString()} h
                     </span>
                   </span>

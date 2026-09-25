@@ -148,7 +148,7 @@ export function SignInPage({ apiBase, sessionExpired = false, onLoginSuccess, on
               >
                 {/* Username Input */}
                 <div>
-                  <label htmlFor="signin-username" className="block text-xs font-semibold text-slate-700 mb-1.5 uppercase tracking-wide">
+                  <label htmlFor="signin-username" className="block text-label font-mono font-semibold text-slate-700 mb-1.5 uppercase tracking-wider">
                     Username
                   </label>
                   <div className="relative group">
@@ -174,7 +174,7 @@ export function SignInPage({ apiBase, sessionExpired = false, onLoginSuccess, on
 
                 {/* Password Input */}
                 <div>
-                  <label htmlFor="signin-password" className="block text-xs font-semibold text-slate-700 mb-1.5 uppercase tracking-wide">
+                  <label htmlFor="signin-password" className="block text-label font-mono font-semibold text-slate-700 mb-1.5 uppercase tracking-wider">
                     Password
                   </label>
                   <div className="relative group">
@@ -281,7 +281,7 @@ export function SignInPage({ apiBase, sessionExpired = false, onLoginSuccess, on
                           )}
                         </div>
                         <div className="min-w-0 flex-1">
-                          <div className="text-small font-semibold text-slate-900 font-display">
+                          <div className="text-small font-semibold text-slate-900">
                             {name}
                           </div>
                           <div className="text-meta text-slate-500 truncate">
