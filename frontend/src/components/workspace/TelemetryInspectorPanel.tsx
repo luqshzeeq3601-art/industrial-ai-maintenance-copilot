@@ -105,7 +105,7 @@ export function TelemetryInspectorPanel({
           ) : (
             !telemetryLoading && (
               <span
-                className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-mono font-semibold bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 shadow-xs"
+                className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-label font-mono font-semibold bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 shadow-xs"
                 title={feed.detail}
               >
                 <span className={`w-1.5 h-1.5 rounded-full ${feed.dot} animate-pulse`} aria-hidden="true" />
@@ -114,7 +114,7 @@ export function TelemetryInspectorPanel({
             )
           )}
         </div>
-        {!telemetryLoading && readings.length > 0 && <p className="mt-1 text-[11px] font-mono text-muted">{feed.detail}</p>}
+        {!telemetryLoading && readings.length > 0 && <p className="mt-1 text-meta font-mono text-muted">{feed.detail}</p>}
 
         {telemetryLoading ? (
           <div className="mt-3 grid grid-cols-2 gap-2" role="status" aria-label="Loading telemetry">
@@ -145,7 +145,7 @@ export function TelemetryInspectorPanel({
                       isAlert ? "bg-red-50/70 border-red-300" : "bg-sunken border-line"
                     }`}
                   >
-                    <div className="flex items-start justify-between gap-1 mb-1 text-[10px] font-mono font-semibold uppercase tracking-wider text-muted truncate" title={label}>
+                    <div className="flex items-start justify-between gap-1 mb-1 text-label font-mono font-semibold uppercase tracking-wider text-muted truncate" title={label}>
                       <span className="truncate">{label}</span>
                       <span className="shrink-0 font-normal">
                         <Sparkline values={r.history ?? []} severity={r.severity} />
@@ -155,7 +155,7 @@ export function TelemetryInspectorPanel({
                     <div className="mt-1">
                       <div className="flex items-baseline gap-1">
                         <span className="text-lg font-bold font-mono text-ink tabular-nums leading-tight">{formatValue(r.value)}</span>
-                        <span className="text-xs font-mono text-muted">{formatUnit(r.unit)}</span>
+                        <span className="text-meta font-mono text-muted">{formatUnit(r.unit)}</span>
                       </div>
 
                       {/* Severity scale: five discrete segments */}
@@ -167,7 +167,7 @@ export function TelemetryInspectorPanel({
                             return <span key={step} className={`h-1.5 flex-1 rounded-xs transition-colors ${active ? fill : "bg-line"}`} />;
                           })}
                         </div>
-                        <span className={`text-[10px] font-mono font-semibold ${sev.text}`} aria-hidden="true">
+                        <span className={`text-label font-mono font-semibold ${sev.text}`} aria-hidden="true">
                           {sev.label}
                         </span>
                       </div>
@@ -267,7 +267,7 @@ export function TelemetryInspectorPanel({
                         <span className="font-mono text-xs font-bold text-ink">{log.fault_code}</span>
                       </div>
                       <span
-                        className={`inline-flex items-center px-2 py-0.5 rounded-full font-mono text-[10px] font-bold shrink-0 border ${
+                        className={`inline-flex items-center px-2 py-0.5 rounded-full font-mono text-label font-bold shrink-0 border ${
                           open
                             ? "bg-red-500/10 text-red-600 border-red-500/20"
                             : "bg-wash text-muted border-line"
@@ -276,8 +276,8 @@ export function TelemetryInspectorPanel({
                         {open ? "OPEN" : "CLOSED"}
                       </span>
                     </div>
-                    <p className="mt-1 text-xs text-ink/80 truncate leading-snug font-medium">{action}</p>
-                    <div className="mt-1 flex items-center justify-between text-[11px] text-muted font-mono">
+                    <p className="mt-1 text-small text-ink/80 truncate leading-snug font-medium">{action}</p>
+                    <div className="mt-1 flex items-center justify-between text-meta text-muted font-mono">
                       <span>{when}</span>
                       <span className="text-subtle font-sans">{log.technician}</span>
                     </div>

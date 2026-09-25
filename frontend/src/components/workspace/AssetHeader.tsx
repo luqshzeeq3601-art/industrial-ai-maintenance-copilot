@@ -164,13 +164,13 @@ export function AssetHeader({ machine, onInspectOverdue }: AssetHeaderProps) {
 
           {/* Overhaul limit marker */}
           <div className="absolute -top-1 h-4.5 w-0.5 bg-ink" style={{ left: `calc(${markPct}% - 1px)` }} aria-hidden="true">
-            <span className="hidden @min-[560px]:block absolute -top-4 -translate-x-1/2 text-[10px] font-mono font-bold text-muted whitespace-nowrap">
+            <span className="hidden @min-[560px]:block absolute -top-4 -translate-x-1/2 text-label font-mono font-bold text-muted whitespace-nowrap">
               {OVERHAUL_THRESHOLD / 1000}k limit
             </span>
           </div>
 
           {/* Scale ticks */}
-          <div className="hidden @min-[560px]:block relative mt-1.5 h-4 text-[10px] font-mono text-subtle" aria-hidden="true">
+          <div className="hidden @min-[560px]:block relative mt-1.5 h-4 text-label font-mono text-subtle" aria-hidden="true">
             {ticks.map((t) => (
               <span key={t} className={`absolute ${t === 0 ? "" : "-translate-x-1/2"}`} style={{ left: `${pct(t)}%` }}>
                 {t === 0 ? "0 h" : `${t.toLocaleString()} h`}

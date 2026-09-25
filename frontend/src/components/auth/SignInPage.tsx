@@ -121,10 +121,10 @@ export function SignInPage({ apiBase, sessionExpired = false, onLoginSuccess, on
           <div className="w-full max-w-[420px] mx-auto">
             {/* Center Sign-in Card */}
             <div className="bg-white/95 backdrop-blur-xl rounded-2xl border border-white/80 shadow-[0_20px_60px_-15px_rgba(15,23,42,0.12),0_1px_3px_rgba(15,23,42,0.04)] p-7 sm:p-9 transition-all">
-              <h1 id="signin-title" className="text-2xl sm:text-[28px] font-bold tracking-tight text-slate-900">
+              <h1 id="signin-title" className="text-2xl sm:text-heading font-bold tracking-tight text-slate-900 font-display">
                 Sign in
               </h1>
-              <p className="mt-1.5 text-sm text-slate-600">
+              <p className="mt-1.5 text-copy text-slate-600">
                 Use your plant operator account.
               </p>
 
@@ -252,7 +252,7 @@ export function SignInPage({ apiBase, sessionExpired = false, onLoginSuccess, on
             {/* Demo Accounts Section (Underneath Card) */}
             {DEMO_ACCOUNTS.length > 0 && (
               <div className="mt-6 w-full">
-                <p className="text-xs font-semibold text-slate-600 mb-2 px-1 text-center sm:text-left">
+                <p className="text-small font-semibold text-slate-600 mb-2 px-1 text-center sm:text-left">
                   Demo accounts (development only)
                 </p>
                 <div className="grid gap-2.5 sm:grid-cols-2">
@@ -281,10 +281,10 @@ export function SignInPage({ apiBase, sessionExpired = false, onLoginSuccess, on
                           )}
                         </div>
                         <div className="min-w-0 flex-1">
-                          <div className="text-xs font-semibold text-slate-900">
+                          <div className="text-small font-semibold text-slate-900 font-display">
                             {name}
                           </div>
-                          <div className="text-[11px] text-slate-500 truncate">
+                          <div className="text-meta text-slate-500 truncate">
                             {scope}
                           </div>
                         </div>

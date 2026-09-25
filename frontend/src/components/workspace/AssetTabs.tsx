@@ -35,15 +35,15 @@ export function FaultBanner({ machine, openLog, lastLog, logsLoading, busy, onCh
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="font-mono text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-red-600 text-white tracking-wider shadow-xs">
+              <span className="font-mono text-label font-bold px-2.5 py-0.5 rounded-full bg-red-600 text-white tracking-wider shadow-xs">
                 {code ? `ALARM ${code}` : "ACTIVE ALARM"}
               </span>
-              <span className="font-mono text-[11px] font-semibold px-2.5 py-0.5 rounded-full border border-red-400/60 text-red-700 tracking-wider">
+              <span className="font-mono text-label font-semibold px-2.5 py-0.5 rounded-full border border-red-400/60 text-red-700 tracking-wider">
                 {severity ? `${severity.toUpperCase()} INTERLOCK` : "ACTIVE CRITICAL INTERLOCK"}
               </span>
             </div>
-            <h2 className="mt-2 text-base font-bold text-ink leading-snug tracking-tight">{summary}</h2>
-            <p className="mt-1 text-xs text-body leading-relaxed">
+            <h2 className="mt-2 text-base font-bold text-ink leading-snug tracking-tight font-display">{summary}</h2>
+            <p className="mt-1 text-small text-body leading-relaxed">
               {logsLoading
                 ? "Loading the work order record…"
                 : openLog
@@ -134,8 +134,8 @@ export function DiagnosticsTab({
                     <Icon className="w-4 h-4" strokeWidth={2} aria-hidden="true" />
                   </div>
                   <span className="min-w-0 flex-1">
-                    <span className="block text-xs sm:text-sm font-semibold text-ink leading-tight">{title}</span>
-                    <span className="block text-[11px] text-muted mt-1 leading-snug">{detail}</span>
+                    <span className="block text-small sm:text-title font-semibold text-ink leading-tight">{title}</span>
+                    <span className="block text-meta text-muted mt-1 leading-snug">{detail}</span>
                   </span>
                 </button>
               </li>
@@ -145,19 +145,19 @@ export function DiagnosticsTab({
       </section>
 
       <section aria-labelledby="trace-heading" className="pt-5 border-t border-line">
-        <h2 id="trace-heading" className="text-sm font-bold text-ink">How the last answer was produced</h2>
+        <h2 id="trace-heading" className="text-sm font-bold text-ink font-display">How the last answer was produced</h2>
         {trace.length === 0 ? (
-          <p className="text-xs text-muted mt-1.5 font-mono">No active trace. Run a check to inspect multi-agent orchestration steps.</p>
+          <p className="text-meta text-muted mt-1.5 font-mono">No active trace. Run a check to inspect multi-agent orchestration steps.</p>
         ) : (
           <ol className="mt-3.5 space-y-2.5">
             {trace.map((step, i) => (
-              <li key={i} className="flex items-start gap-3 p-2.5 rounded-lg border border-line bg-sunken/60 text-xs">
-                <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-600 font-mono text-[10px] font-bold flex items-center justify-center shrink-0 border border-blue-200">
+              <li key={i} className="flex items-start gap-3 p-2.5 rounded-lg border border-line bg-sunken/60 text-small">
+                <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-600 font-mono text-label font-bold flex items-center justify-center shrink-0 border border-blue-200">
                   {i + 1}
                 </span>
                 <span className="min-w-0">
-                  <span className="font-bold text-ink capitalize tracking-wide">{step.agent}</span>
-                  <span className="block text-body mt-0.5 leading-relaxed">{step.summary}</span>
+                  <span className="font-bold text-ink capitalize tracking-wide font-display">{step.agent}</span>
+                  <span className="block text-body mt-0.5 leading-relaxed text-small">{step.summary}</span>
                 </span>
               </li>
             ))}

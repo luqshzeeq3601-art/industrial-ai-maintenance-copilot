@@ -234,6 +234,9 @@ def run_migrations(conn: sqlite3.Connection):
             )
             logger.info("Migration v4 applied successfully.")
 
+        # Always run idempotent seed check to guarantee tables are seeded
+        seed_initial_simulated_platform(conn)
+
 def seed_initial_simulated_platform(conn: sqlite3.Connection):
     """Seed sample alarms, work orders, inspections, and default users without touching existing data."""
     cur = conn.cursor()

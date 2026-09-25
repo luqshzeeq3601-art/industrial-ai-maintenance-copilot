@@ -187,28 +187,28 @@ export function FleetRegisterPanel({
 
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center justify-between gap-1">
-                          <span className={`block text-small font-bold truncate leading-tight ${isSelected ? "text-blue-900 font-extrabold" : "text-slate-900"}`}>
+                          <span className={`block font-display text-small font-bold truncate leading-tight ${isSelected ? "text-blue-900 font-extrabold" : "text-slate-900"}`}>
                             {item.name}
                           </span>
                           {isFault ? (
-                            <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-red-50 text-red-700 border border-red-200 shrink-0">
-                              <span className="text-[8px]">◆</span> Fault
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-label font-bold bg-red-50 text-red-700 border border-red-200 shrink-0">
+                              <span className="text-[10px]">◆</span> Fault
                             </span>
                           ) : isMaint ? (
-                            <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200 shrink-0">
-                              <span className="text-[8px]">◆</span> Maint
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-label font-bold bg-amber-50 text-amber-700 border border-amber-200 shrink-0">
+                              <span className="text-[10px]">◆</span> Maint
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 shrink-0">
+                            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-label font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 shrink-0">
                               <span className="w-1.5 h-1.5 rounded-full bg-status-ok" /> Running
                             </span>
                           )}
                         </div>
 
-                        <div className="flex items-center gap-1 mt-0.5 text-meta text-muted min-w-0">
-                          <span className="font-mono text-[11px] font-medium text-slate-500 whitespace-nowrap shrink-0">{item.machine_id}</span>
+                        <div className="flex items-center gap-1.5 mt-0.5 text-meta text-muted min-w-0">
+                          <span className="font-mono text-label font-semibold text-slate-600 whitespace-nowrap shrink-0">{item.machine_id}</span>
                           <span className="text-faint shrink-0" aria-hidden="true">·</span>
-                          <span className="truncate text-[11px]" title={formatLocation(item.location)}>{formatLocation(item.location)}</span>
+                          <span className="truncate text-meta" title={formatLocation(item.location)}>{formatLocation(item.location)}</span>
                         </div>
 
                         <div className="flex items-center justify-between gap-2 mt-1">

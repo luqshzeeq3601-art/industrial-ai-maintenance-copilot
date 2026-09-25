@@ -2,7 +2,9 @@
 import pytest
 from fastapi.testclient import TestClient
 from backend.app.main import app
+from backend.app.database.models import init_db
 
+init_db()
 client = TestClient(app)
 
 def test_list_equipment_v1():
