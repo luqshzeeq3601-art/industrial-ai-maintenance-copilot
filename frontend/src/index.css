@@ -1,100 +1,93 @@
-/* Enterprise Operations Typography · Primary: Inter · Data/Technical: Geist Mono */
+/* Maintenance Copilot design tokens · maintenance_copilot_design_spec/DESIGN.md §3–§6 */
 @import "tailwindcss";
 
 @theme {
   --font-sans: "Inter", "Segoe UI", Arial, sans-serif;
-  --font-display: "Inter", "Segoe UI", Arial, sans-serif;
-  --font-ui: "Inter", "Segoe UI", Arial, sans-serif;
   --font-mono: "Geist Mono", "SFMono-Regular", Consolas, monospace;
-  --font-data: "Geist Mono", "SFMono-Regular", Consolas, monospace;
 
-  /* Full HD Desktop (1920x1080) Typography Scale */
-  --text-label: 12px;        /* helper/metadata, badges, eyebrow tags */
+  /* Type scale (TYPOGRAPHY.md §2) */
+  --text-label: 12px;        /* table headers, eyebrow labels, compact metadata */
   --text-label--line-height: 16px;
-  --text-meta: 13px;         /* captions, helper text, breadcrumbs, table cells */
+  --text-meta: 13px;         /* helper text, table cells, metadata */
   --text-meta--line-height: 18px;
-  --text-small: 14px;        /* dense UI text, navigation, buttons, controls */
+  --text-small: 14px;        /* navigation, buttons, controls */
   --text-small--line-height: 20px;
-  --text-copy: 14px;         /* primary body copy, chat answers */
+  --text-copy: 14px;         /* body copy, chat */
   --text-copy--line-height: 21px;
-  --text-title: 16px;        /* card titles, form inputs, section subheaders */
+  --text-title: 16px;        /* card titles */
   --text-title--line-height: 22px;
   --text-section: 18px;      /* section titles */
   --text-section--line-height: 24px;
-  --text-heading: 26px;      /* asset / primary titles */
+  --text-heading: 26px;      /* asset / primary title */
   --text-heading--line-height: 32px;
-  --text-page-title: 30px;   /* page titles */
+  --text-kpi: 28px;          /* KPI values (Geist Mono) */
+  --text-kpi--line-height: 32px;
+  --text-page-title: 30px;   /* one per page */
   --text-page-title--line-height: 36px;
-  --text-display: 30px;      /* KPI numbers, asset titles */
-  --text-display--line-height: 36px;
-  --text-hero: 40px;         /* sign-in statements, major hero display */
-  --text-hero--line-height: 48px;
+  --text-hero: 40px;         /* sign-in heading only */
+  --text-hero--line-height: 46px;
 
-  /* Surfaces & neutrals (slate). Components use these names, never raw hex. */
-  --color-paper: #f3f6fa;       /* app canvas behind panels (gray-blue) */
-  --color-panel: #ffffff;       /* panel / card surface */
-  --color-sunken: #f7f9fc;      /* table header, row hover, inset tile */
-  --color-wash: #f1f5f9;        /* user bubble, pressed, chips */
-  --color-line: #e3e8ef;        /* default border / divider */
+  /* Core surfaces and text (DESIGN.md §4). Components use these names, never raw hex. */
+  --color-paper: #f6f8fb;       /* app background */
+  --color-panel: #ffffff;       /* surface */
+  --color-sunken: #f8fafc;      /* soft surface: table header, row hover, insets */
+  --color-wash: #f1f5f9;        /* pressed, chips, bar tracks */
+  --color-line: #e2e8f0;        /* border / divider */
   --color-line-strong: #cbd5e1; /* control border */
-  --color-ink: #0f172a;         /* headings, primary text (17.9:1) */
-  --color-body: #334155;        /* body text (10.4:1) */
-  --color-muted: #475569;       /* secondary text, labels (7.6:1) */
-  --color-subtle: #64748b;      /* icons, placeholders (4.8:1) */
+  --color-ink: #0f172a;         /* primary text 17.9:1 */
+  --color-body: #475569;        /* secondary text 7.6:1 */
+  --color-muted: #64748b;       /* muted text 4.8:1 on white */
+  --color-subtle: #64748b;      /* icons, placeholders */
   --color-faint: #94a3b8;       /* decorative separators only */
-  --color-deck: #111827;        /* avatar */
+  --color-deck: #0f172a;        /* avatar, tooltip */
 
-  /* Semantic: text/strong (AA on white + on its -bg), ink, bg, line */
-  /* Accent = the single product blue: primary actions, selection, focus, links */
-  --color-accent: #2563eb;       /* 5.2:1 on white */
+  /* Primary blue: primary actions, selection, focus, links */
+  --color-accent: #2563eb;
   --color-accent-hover: #1d4ed8;
   --color-accent-press: #1e40af;
-  --color-accent-ink: #1e3a8a;
-  --color-accent-bg: #eef4ff;
+  --color-accent-ink: #1e40af;
+  --color-accent-bg: #eff4ff;
   --color-accent-line: #bfd3fb;
-  --color-success: #15803d;
-  --color-success-ink: #14532d;
-  --color-success-bg: #f0fdf4;
-  --color-success-line: #bbf7d0;
-  --color-warn: #b45309;
-  --color-warn-ink: #713f12;
-  --color-warn-bg: #fffbeb;
-  --color-warn-line: #fcd34d;
-  --color-danger: #b91c1c;
-  --color-danger-ink: #7f1d1d;
-  --color-danger-bg: #fef2f2;
-  --color-danger-line: #fecaca;
-
-  /* Solid fills under white text (buttons, count badges); kept >= 4.5:1 against #fff in both themes */
   --color-accent-solid: #2563eb;
   --color-accent-solid-hover: #1d4ed8;
-  --color-accent-solid-press: #1e40af;
-  --color-danger-solid: #b91c1c;
-  --color-danger-solid-hover: #991b1b;
-  --color-success-solid: #15803d;
-  --color-success-solid-hover: #166534;
+
+  /* Semantic. Text steps are darkened where the spec hue is below 4.5:1 on white/tint. */
+  --color-success: #15803d;
+  --color-success-ink: #14532d;
+  --color-success-bg: #ecfdf3;
+  --color-success-line: #bbf7d0;
+  --color-success-solid: #16a34a;
+  --color-success-solid-hover: #15803d;
+  --color-warn: #b45309;
+  --color-warn-ink: #78350f;
+  --color-warn-bg: #fff7e6;
+  --color-warn-line: #fcd9a0;
   --color-warn-solid: #b45309;
+  --color-danger: #dc2626;
+  --color-danger-ink: #991b1b;
+  --color-danger-bg: #fef2f2;
+  --color-danger-line: #fecaca;
+  --color-danger-solid: #dc2626;
+  --color-danger-solid-hover: #b91c1c;
 
-  /* Status signal (dots, bars, andon), always paired with a text label */
+  /* Status signal (icons, andon light, donut). Always paired with a text label. */
   --color-status-ok: #16a34a;
-  --color-status-maint: #f59e0b;
+  --color-status-maint: #d97706;
   --color-status-fault: #dc2626;
+  --color-status-off: #64748b;
 
-  /* Categorical (charts only): fault categories, deliberately distinct from status red/amber/green */
-  --color-category-electrical: #ea580c;
-  --color-category-hydraulic: #2563eb;
-  --color-category-mechanical: #1e3a5f;
-  --color-category-pneumatic: #0d9488;
-  --color-category-software: #7c3aed;
+  /* Elevation: cards sit flat on a border; only overlays lift. */
+  --shadow-overlay: 0 4px 12px -2px rgba(15, 23, 42, 0.1), 0 2px 6px -1px rgba(15, 23, 42, 0.06);
 
-  /* Tinted shadows (hue-matched, single light source: top) */
-  --shadow-tinted-xs: 0 1px 2px rgba(47, 52, 55, 0.05);
-  --shadow-tinted-md: 0 2px 6px rgba(47, 52, 55, 0.07), 0 12px 32px rgba(47, 52, 55, 0.1);
-  --shadow-cockpit: 0 1px 3px rgba(15, 23, 42, 0.08), 0 1px 2px rgba(15, 23, 42, 0.04);
-  --shadow-cockpit-elevated: 0 4px 12px -2px rgba(15, 23, 42, 0.08), 0 2px 6px -1px rgba(15, 23, 42, 0.04);
+  /* Breakpoints (DESIGN.md §7): md 768 rail · lg 1024 narrow sidebar · wide 1440 full desktop */
+  --breakpoint-wide: 90rem;
 
+  --radius-card: 12px;
+  --radius-control: 8px;
 
   /* z-scale */
+  --z-sticky: 10;
+  --z-drawer: 30;
   --z-pop: 40;
   --z-overlay: 50;
 }
@@ -102,16 +95,13 @@
 @layer base {
   html {
     color-scheme: light;
-    scroll-behavior: smooth;
     font-size: 14px;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    text-rendering: optimizeLegibility;
   }
 
   body {
     margin: 0;
-    padding: 0;
     min-height: 100dvh;
     background-color: var(--color-paper);
     color: var(--color-ink);
@@ -120,28 +110,11 @@
     line-height: 1.5;
   }
 
-  h1 {
-    font-family: var(--font-sans);
-    font-weight: 700;
-    text-wrap: balance;
-    letter-spacing: -0.02em;
-  }
-
-  h2 {
-    font-family: var(--font-sans);
-    font-weight: 650;
-    text-wrap: balance;
-    letter-spacing: -0.015em;
-  }
-
+  h1,
+  h2,
   h3,
-  h4,
-  h5,
-  h6 {
-    font-family: var(--font-sans);
-    font-weight: 600;
+  h4 {
     text-wrap: balance;
-    letter-spacing: -0.01em;
   }
 
   p,
@@ -149,43 +122,14 @@
     text-wrap: pretty;
   }
 
-  .font-display {
-    font-family: var(--font-sans);
-    letter-spacing: -0.02em;
-  }
-
-  /* Monospace only for technical data: IDs, codes, telemetry, tabular values */
-  .font-mono,
-  .font-data {
-    font-family: var(--font-mono);
-    font-variant-numeric: tabular-nums;
-  }
-
-  /* Full HD Desktop (1920x1080) legibility enhancement */
-  @media (min-width: 1440px) {
-    :root {
-      --text-label: 12px;
-      --text-meta: 13px;
-      --text-small: 14px;
-      --text-copy: 14px;
-      --text-title: 16px;
-      --text-section: 18px;
-      --text-heading: 26px;
-      --text-page-title: 30px;
-      --text-display: 30px;
-      --text-hero: 42px;
-    }
-  }
-
   :focus-visible {
     outline: 2px solid var(--color-accent);
     outline-offset: 2px;
-    border-radius: 4px;
   }
 
   ::selection {
-    background: var(--color-accent);
-    color: var(--color-panel);
+    background: var(--color-accent-bg);
+    color: var(--color-ink);
   }
 
   button:disabled {
@@ -194,38 +138,43 @@
 
   button,
   [role="button"],
-  a {
+  a,
+  select,
+  summary {
     touch-action: manipulation;
   }
 }
 
-/* Skip link for keyboard users */
+@layer utilities {
+  /* Technical data only: IDs, fault codes, telemetry, hours, timestamps (TYPOGRAPHY.md §1) */
+  .font-data {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
 .skip-link {
   position: fixed;
   top: -48px;
   left: 16px;
   z-index: var(--z-overlay);
-  padding: 8px 14px;
+  padding: 10px 14px;
   background: var(--color-deck);
   color: var(--color-panel);
-  font-size: 12px;
+  font-size: var(--text-small);
   font-weight: 600;
-  border-radius: 6px;
-  transition: top 0.2s ease;
+  border-radius: var(--radius-control);
+  transition: top 0.15s ease-out;
   text-decoration: none;
 }
 .skip-link:focus {
   top: 12px;
 }
 
-@keyframes fade-in {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
 @keyframes shimmer {
   0% {
     background-position: -400px 0;
@@ -235,26 +184,7 @@
   }
 }
 
-@keyframes pulse-alarm {
-  0%, 100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.35;
-    transform: scale(0.9);
-  }
-}
-
-.animate-fade-in {
-  animation: fade-in 0.2s ease both;
-}
-
-.animate-pulse-alarm {
-  animation: pulse-alarm 1.8s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
-
-/* Skeleton loader (replaces generic spinner for content shapes) */
+/* Skeleton loader for content shapes */
 .skeleton {
   background: linear-gradient(90deg, var(--color-wash) 25%, var(--color-sunken) 50%, var(--color-wash) 75%);
   background-size: 800px 100%;
@@ -262,62 +192,14 @@
   border-radius: 6px;
 }
 
-.font-mono {
-  font-family: var(--font-mono);
-}
-
-.custom-scrollbar::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
-}
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
-}
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background: var(--color-line-strong);
-  border-radius: 3px;
-}
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: var(--color-faint);
-}
 .custom-scrollbar {
   scrollbar-width: thin;
   scrollbar-color: var(--color-line-strong) transparent;
 }
 
-/* Tooltip for icon-only controls: shows on hover and keyboard focus, and names nothing new for screen readers. */
-.tooltip {
-  position: absolute;
-  left: calc(100% + 8px);
-  top: 50%;
-  transform: translateY(-50%);
-  z-index: var(--z-pop);
-  padding: 4px 8px;
-  border-radius: 6px;
-  background: var(--color-deck);
-  color: #fff;
-  font-size: var(--text-meta);
-  font-weight: 500;
-  white-space: nowrap;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 0.12s ease;
-}
-.group:hover > .tooltip,
-.group:focus-visible > .tooltip {
-  opacity: 1;
-}
-
-/* Reduced motion respect */
 @media (prefers-reduced-motion: reduce) {
-  html {
-    scroll-behavior: auto;
-  }
-  .animate-fade-in,
   .skeleton,
-  .animate-spin,
-  .animate-pulse,
-  .animate-pulse-alarm {
+  .animate-spin {
     animation: none;
   }
   *,

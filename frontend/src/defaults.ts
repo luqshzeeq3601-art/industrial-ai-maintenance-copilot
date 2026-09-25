@@ -1,11 +1,10 @@
 /*
  * Sample plant used only when DEMO_DATA is on (development or VITE_DEMO_DATA=true) and the API is unreachable.
- * Every panel that renders it shows a "Demo data" label. Timestamps are relative to now so nothing reads as stale.
+ * The app shows a "Demo data" banner whenever it is on screen.
  */
-import type { EquipmentData } from "./components/visualization/OperatingHoursBarChart";
-import type { TelemetryReading, WorkOrderLog } from "./components/workspace/types";
+import type { Equipment } from "./api/models";
 
-export const DEMO_EQUIPMENT: EquipmentData[] = [
+export const DEMO_EQUIPMENT: Equipment[] = [
   {
     machine_id: "EQ-1000",
     name: "ApexMill-500",
@@ -106,84 +105,3 @@ export const DEMO_EQUIPMENT: EquipmentData[] = [
     criticality: "medium"
   }
 ];
-
-const hoursAgo = (h: number) => new Date(Date.now() - h * 3_600_000).toISOString();
-
-export function demoWorkOrders(machineId: string): WorkOrderLog[] {
-  if (machineId !== "EQ-1000") return [];
-  return [
-    {
-      id: 101,
-      machine_id: "EQ-1000",
-      fault_code: "E-308",
-      fault_description: "Inverter Bus Undervoltage Alarm. DC link bus voltage measured below 380V threshold.",
-      action_taken: "Diagnosed symptom according to manual. Measuring DC bus bar voltage.",
-      technician: "David Chen",
-      started_at: hoursAgo(2),
-      completed_at: "",
-      duration_mins: 0,
-      parts_replaced: "",
-      severity: "critical"
-    },
-    {
-      id: 102,
-      machine_id: "EQ-1000",
-      fault_code: "M-301",
-      fault_description: "Slideway Automatic Lubrication Fault. Low pressure trip on Y-axis distributor.",
-      action_taken: "Investigated trip alarm. Found lube distribution metering valve clogged. Cleaned valve and refilled Mobil Vactra No 2.",
-      technician: "Marcus Wong",
-      started_at: hoursAgo(24 * 34),
-      completed_at: hoursAgo(24 * 34 - 1.5),
-      duration_mins: 90,
-      parts_replaced: "Lube distribution metering valve",
-      severity: "medium"
-    },
-    {
-      id: 103,
-      machine_id: "EQ-1000",
-      fault_code: "H-415",
-      fault_description: "Proportional Directional Valve Coil Open Circuit.",
-      action_taken: "Scheduled corrective action: replaced defective solenoid cartridge and calibrated flow response.",
-      technician: "Sarah Jenkins",
-      started_at: hoursAgo(24 * 74),
-      completed_at: hoursAgo(24 * 74 - 2.3),
-      duration_mins: 140,
-      parts_replaced: "Rexroth 4WRPEH 6-C Proportional Valve",
-      severity: "high"
-    }
-  ];
-}
-
-export function demoTelemetry(machineId: string): TelemetryReading[] {
-  if (machineId !== "EQ-1000") return [];
-  const now = new Date().toISOString();
-  return [
-    { metric: "thermal_sensor", value: 140, unit: "C", severity: "critical", timestamp: now, history: [118, 121, 125, 124, 130, 134, 137, 140] },
-    { metric: "dc_bus_voltage", value: 342, unit: "V", severity: "high", timestamp: now, history: [392, 390, 385, 379, 371, 360, 351, 342] },
-    { metric: "spindle_vibration", value: 1.8, unit: "mm/s", severity: "low", timestamp: now, history: [1.7, 1.8, 1.7, 1.9, 1.8, 1.8, 1.7, 1.8] },
-    { metric: "lube_pressure", value: 4.2, unit: "bar", severity: "low", timestamp: now, history: [4.3, 4.2, 4.2, 4.3, 4.1, 4.2, 4.2, 4.2] }
-  ];
-}
-
-export const DEMO_FAULTS = {
-  fault_categories: [
-    { category: "electrical", count: 7 },
-    { category: "mechanical", count: 4 },
-    { category: "hydraulic", count: 3 },
-    { category: "pneumatic", count: 2 },
-    { category: "software", count: 1 }
-  ],
-  severity_distribution: [
-    { severity: "critical", count: 3 },
-    { severity: "high", count: 6 },
-    { severity: "medium", count: 5 },
-    { severity: "low", count: 3 }
-  ],
-  incident_breakdown: [
-    { category: "electrical", occurrences: 7, total_downtime_mins: 420 },
-    { category: "mechanical", occurrences: 4, total_downtime_mins: 280 },
-    { category: "hydraulic", occurrences: 3, total_downtime_mins: 210 },
-    { category: "pneumatic", occurrences: 2, total_downtime_mins: 90 },
-    { category: "software", occurrences: 1, total_downtime_mins: 45 }
-  ]
-};

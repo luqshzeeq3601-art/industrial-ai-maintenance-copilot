@@ -3,6 +3,10 @@
 All notable changes, newest first. Format: Keep a Changelog.
 
 ## [Unreleased]
+- Frontend rebuilt to `maintenance_copilot_design_spec/`: routed pages (Login, Dashboard, Assets + Copilot, Asset Detail, Diagnostics, SOPs, Work Orders, History, Settings) on react-router, TanStack Query, and shared UI primitives; sign-in required; approvals moved into Work Orders.
+- API: migration v5 (service intervals, WO due dates, profile fields, `telemetry_samples`, `activity_events`); work-order create/update, alarms list/acknowledge, SOP catalogue (`data/sops/sops.json`), history feed, profile, search, telemetry samples; server-side CSRF check on mutations.
+- Simulator: `--samples` backfills continuous sensor readings.
+- CI runs the frontend tests and the new API contract tests.
 - Split `IndustrialRepository` god object into `BaseRepository` + 7 focused repos, facade kept; callers migrated (`main`, `api/v1`, `services`, `tools`, `agents`).
 - Split guardrails `abstention.py` into `domain.py` / `injection.py` / `evidence.py` + facade.
 - Added `VectorStore` abstraction (`FaissStore`, `MilvusStore`, `AzureAISearchRetriever` stub) + `VECTOR_BACKEND` switch.

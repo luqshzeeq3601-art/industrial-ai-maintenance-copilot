@@ -288,6 +288,8 @@ npm run dev
 ```
 Open [http://localhost:3000](http://localhost:3000). Set `VITE_API_URL=http://localhost:8000` if the API is remote. Refresh the typed contract with `npm run openapi` (regenerates from `/openapi.json` into `src/api/types.ts`).
 
+The UI requires sign-in and follows [`maintenance_copilot_design_spec/`](maintenance_copilot_design_spec/DESIGN.md). Routes: `/` dashboard, `/assets` (asset table + copilot), `/assets/:id/:tab?`, `/diagnostics/:id?/:tab?`, `/sops`, `/work-orders/:id?` (supervisors and admins also get a **Pending approval** tab), `/history`, `/settings/:section?`, `/login`. Filters, sort, and page live in the URL.
+
 In development, labelled sample data stands in when the API is unreachable. Production builds show the real error instead; set `VITE_DEMO_DATA=true` (sample data) or `VITE_DEMO_SIGNIN=true` (one-click demo accounts) only for demo deployments. Run the UI tests with `npm test`.
 
 ### 5. Docker Compose profiles
@@ -346,7 +348,7 @@ pytest backend/tests/ -q -m "not slow"
 pytest backend/tests/ -v
 
 # Contract + API slice (same as CI backend-fast)
-pytest backend/tests/test_api_contract.py backend/tests/test_v1_api.py -q -m "not slow"
+pytest backend/tests/test_api_contract.py backend/tests/test_v1_api.py backend/tests/test_design_spec_api.py -q -m "not slow"
 
 # 100-case extended evaluation benchmark
 python scripts/evaluate_extended.py
@@ -362,6 +364,12 @@ python scripts/simulate_telemetry.py --transport rest --scenario mechanical --ra
 
 # Semiconductor plasma RF power deviation via MQTT (QoS 1)
 python scripts/simulate_telemetry.py --transport mqtt --scenario semiconductor --rate 1.0
+```
+
+```bash
+# Backfill 24 h of simulated continuous sensor samples (spindle speed, temperature, vibration, motor current)
+# for the Diagnostics "Live data" charts
+python scripts/simulate_telemetry.py --samples --machines EQ-1000,EQ-1001 --hours 24 --step-minutes 10
 ```
 
 Postgres live check: `python scripts/verify_postgres.py --verify-counts`.

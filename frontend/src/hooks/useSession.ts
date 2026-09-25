@@ -12,6 +12,8 @@ export function useSession() {
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
   const [pendingApprovals, setPendingApprovals] = useState(0);
   const [expired, setExpired] = useState(false);
+  /** False until the initial /auth/me check settles, so guards don't flash the sign-in page. */
+  const [checked, setChecked] = useState(false);
   const isApprover = isApproverRole(currentUser?.role);
 
   useEffect(() => {
@@ -21,7 +23,10 @@ export function useSession() {
       .then((data) => {
         if (data?.authenticated && data.user) setCurrentUser({ ...data.user, csrf_token: data.csrf_token });
       })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => {
+        if (!controller.signal.aborted) setChecked(true);
+      });
     return () => controller.abort();
   }, []);
 
@@ -72,5 +77,5 @@ export function useSession() {
 
   const dismissExpired = useCallback(() => setExpired(false), []);
 
-  return { currentUser, isApprover, pendingApprovals, setPendingApprovals, expired, signedIn, signedOut, dismissExpired };
+  return { currentUser, checked, isApprover, pendingApprovals, setPendingApprovals, expired, signedIn, signedOut, dismissExpired };
 }

@@ -18,8 +18,9 @@ interface EquipmentSchematicIconProps extends HTMLAttributes<HTMLDivElement> {
   machineId?: string;
   name?: string;
   type?: string;
+  /** Accepted for call-site compatibility; status is shown beside the thumbnail, not in it. */
   status?: string;
-  size?: "sm" | "md" | "lg";
+  size?: "sm" | "md" | "lg" | "xl";
 }
 
 export function resolveMachineCategory(id = "", name = "", type = ""): MachineCategory {
@@ -38,52 +39,33 @@ export function resolveMachineCategory(id = "", name = "", type = ""): MachineCa
   return "generic";
 }
 
-/**
- * High-precision industrial vector schematic icon for plant equipment.
- * Replaces generic AI-slop 3D clipart with authentic, blueprint-calibrated CAD line drawings.
- */
+/** Line-drawn machine thumbnail by equipment category. Decorative: the machine name sits beside it. */
 export function EquipmentSchematicIcon({
   machineId = "",
   name = "",
   type = "",
-  status = "operational",
   size = "md",
   className = "",
+  status: _status,
   ...rest
 }: EquipmentSchematicIconProps) {
   const category = resolveMachineCategory(machineId, name, type);
-  const statusKey = status.toLowerCase();
 
   const dimensions = {
     sm: "w-11 h-11 min-w-[44px]",
     md: "w-14 h-14 min-w-[56px]",
-    lg: "w-18 h-18 min-w-[72px]"
+    lg: "w-18 h-18 min-w-[72px]",
+    xl: "w-24 h-24 min-w-[96px] p-3"
   }[size];
 
   const strokeColor = "currentColor";
 
   return (
     <div
-      className={`relative flex items-center justify-center rounded-lg border border-slate-200/90 bg-gradient-to-b from-white to-slate-50/90 p-1.5 overflow-hidden shrink-0 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] text-slate-700 ${dimensions} ${className}`}
+      className={`relative flex items-center justify-center rounded-[var(--radius-control)] border border-line bg-sunken p-1.5 overflow-hidden shrink-0 text-body ${dimensions} ${className}`}
       aria-hidden="true"
       {...rest}
     >
-      {/* CAD technical crosshair ticks */}
-      <span className="absolute top-1 left-1 w-1 h-1 border-t border-l border-slate-300" />
-      <span className="absolute top-1 right-1 w-1 h-1 border-t border-r border-slate-300" />
-      <span className="absolute bottom-1 left-1 w-1 h-1 border-b border-l border-slate-300" />
-      <span className="absolute bottom-1 right-1 w-1 h-1 border-b border-r border-slate-300" />
-
-      {/* Blueprint grid pattern background */}
-      <svg className="absolute inset-0 w-full h-full opacity-[0.07] pointer-events-none" viewBox="0 0 40 40">
-        <defs>
-          <pattern id="cad-grid" width="8" height="8" patternUnits="userSpaceOnUse">
-            <path d="M 8 0 L 0 0 0 8" fill="none" stroke="currentColor" strokeWidth="0.5" />
-          </pattern>
-        </defs>
-        <rect width="100%" height="100%" fill="url(#cad-grid)" />
-      </svg>
-
       {/* Vector Schematics tailored per machine category */}
       <svg
         viewBox="0 0 48 48"
@@ -92,7 +74,7 @@ export function EquipmentSchematicIcon({
         strokeWidth="1.6"
         strokeLinecap="round"
         strokeLinejoin="round"
-        className="w-full h-full p-0.5 z-1 drop-shadow-xs"
+        className="w-full h-full p-0.5"
       >
         {category === "mill" && (
           /* 5-Axis CNC Mill: Column, Gantry, Spindle Head, Endmill, Trunnion Rotary Table, Enclosure */
@@ -324,16 +306,6 @@ export function EquipmentSchematicIcon({
         )}
       </svg>
 
-      {/* State-aware LED Status Beacon */}
-      <span
-        className={`absolute bottom-1 right-1 w-2 h-2 rounded-full border border-white shadow-xs ${
-          statusKey === "fault"
-            ? "bg-red-500 animate-pulse ring-1 ring-red-400"
-            : statusKey === "maintenance"
-              ? "bg-amber-500 ring-1 ring-amber-300"
-              : "bg-emerald-500"
-        }`}
-      />
     </div>
   );
 }
