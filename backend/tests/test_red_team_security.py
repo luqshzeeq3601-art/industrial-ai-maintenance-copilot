@@ -140,9 +140,11 @@ def test_unauthorized_technician_cannot_approve_action(client):
     resp = client.post(
         "/api/v1/actions/ACT-999999/approve",
         cookies=cookies,
+        headers={"X-CSRF-Token": tech_login.json()["csrf_token"]},
         json={"decision": "approved", "comment": "Bypass attempt"}
     )
     assert resp.status_code == 403
+    assert "forbidden" in resp.json()["detail"].lower()
 
 
 def test_telemetry_strict_hitl_isolation():

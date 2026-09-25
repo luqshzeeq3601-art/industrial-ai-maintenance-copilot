@@ -1,0 +1,41 @@
+{
+  "_comment": "SOP catalogue metadata for GET /api/v1/sops. Kept out of the .md files so the RAG index is unaffected. ids and applicable equipment are taken from each document's header; `updated` is the file's last commit date.",
+  "sops": [
+    {
+      "file": "sop_hydraulic_pump_maintenance.md",
+      "id": "SOP-MNT-HYD-008",
+      "title": "Hydraulic power unit overhaul and valve servicing",
+      "category": "maintenance",
+      "assets": ["TitanPress-3000", "Hydropress-1200", "Extruder-E40"],
+      "status": "active",
+      "updated": "2026-09-18"
+    },
+    {
+      "file": "sop_rf_generator_calibration.md",
+      "id": "SOP-RF-001",
+      "title": "RF generator and matching network calibration",
+      "category": "maintenance",
+      "assets": ["EQ-2001", "EQ-2002"],
+      "status": "active",
+      "updated": "2026-09-22"
+    },
+    {
+      "file": "sop_semiconductor_vacuum_leak_isolation.md",
+      "id": "SOP-VAC-002",
+      "title": "Vacuum chamber leak detection and seal replacement",
+      "category": "troubleshooting",
+      "assets": ["EQ-2001", "EQ-2002"],
+      "status": "active",
+      "updated": "2026-09-22"
+    },
+    {
+      "file": "sop_spindle_bearing_replacement.md",
+      "id": "SOP-MNT-CNC-014",
+      "title": "High-precision spindle bearing replacement",
+      "category": "maintenance",
+      "assets": ["ApexMill-500", "ApexMill-750", "Lathe-X200"],
+      "status": "active",
+      "updated": "2026-09-18"
+    }
+  ]
+}

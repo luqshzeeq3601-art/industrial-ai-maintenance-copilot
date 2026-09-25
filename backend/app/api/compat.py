@@ -2,16 +2,20 @@
 import json
 import re
 from typing import Optional
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Request
 from fastapi.responses import PlainTextResponse
 from backend.app.config import settings
 from backend.app.database.models import get_connection
 from backend.app.database.equipment_repository import EquipmentRepository
 from backend.app.database.fault_code_repository import FaultCodeRepository
+from backend.app.database.activity_repository import ActivityRepository
+from backend.app.auth.security import get_current_user_optional
+from backend.app.services import sop_service
 
 router = APIRouter(tags=["Compatibility"])
 equipment_repo = EquipmentRepository()
 fault_repo = FaultCodeRepository()
+activity_repo = ActivityRepository()
 
 
 @router.get("/api/equipment")
@@ -77,6 +81,14 @@ def fleet_health_analytics(days: Optional[int] = Query(None, ge=1, le=3650)):
         where, params = _log_window(days)
         cur.execute("SELECT sum(duration_mins) as total_downtime, count(*) as repairs FROM maintenance_logs" + where, params)
         downtime_row = cur.fetchone()
+        cur.execute("SELECT count(*) FROM work_orders WHERE status IN ('pending', 'approved', 'in_progress')")
+        active_work_orders = cur.fetchone()[0]
+        daily_downtime = []
+        if days:
+            where, params = _log_window(days)
+            cur.execute("SELECT date(started_at) as day, round(sum(duration_mins) / 60.0, 1) as hours "
+                        "FROM maintenance_logs" + where + " GROUP BY day ORDER BY day", params)
+            daily_downtime = [dict(r) for r in cur.fetchall()]
         previous_row = None
         if days:
             where, params = _log_window(days, previous=True)
@@ -94,6 +106,8 @@ def fleet_health_analytics(days: Optional[int] = Query(None, ge=1, le=3650)):
             "period_days": days,
             "previous_downtime_hours": round((previous_row["total_downtime"] or 0) / 60, 1) if previous_row else None,
             "previous_repairs_logged": (previous_row["repairs"] or 0) if previous_row else None,
+            "active_work_orders": active_work_orders,
+            "daily_downtime_hours": daily_downtime,
             "status_distribution": status_distribution,
             "criticality_distribution": criticality_distribution}
 
@@ -123,12 +137,20 @@ _DOC_NAME = re.compile(r"^[A-Za-z0-9_\-]+\.md$")
 
 
 @router.get("/api/documents/{name}", response_class=PlainTextResponse)
-def read_document(name: str):
-    """Markdown source of a cited manual or SOP. Only plain file names inside data/manuals and data/sops resolve."""
+def read_document(name: str, request: Request):
+    """Markdown source of a cited manual or SOP. Only plain file names inside data/manuals and data/sops resolve.
+
+    Signed-in views of an SOP are recorded in the history feed.
+    """
     if not _DOC_NAME.match(name):
         raise HTTPException(status_code=404, detail="Document not found")
     for folder in ("manuals", "sops"):
         path = settings.DOCS_DIR / folder / name
         if path.is_file():
+            user = get_current_user_optional(request) if folder == "sops" else None
+            if user:
+                sop = sop_service.find_by_file(name)
+                label = f"{sop['id']} viewed: {sop['title']}" if sop else f"SOP viewed: {name}"
+                activity_repo.record("sop", user["username"], label, ref=name)
             return PlainTextResponse(path.read_text(encoding="utf-8"), media_type="text/markdown; charset=utf-8")
     raise HTTPException(status_code=404, detail="Document not found")

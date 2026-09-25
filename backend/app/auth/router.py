@@ -76,13 +76,19 @@ def logout(response: Response):
     return {"message": "Logged out successfully."}
 
 @router.get("/me")
-def get_me(request: Request):
+def get_me(request: Request, response: Response):
     """Return currently logged-in user profile or unauthenticated status."""
     user = get_current_user_optional(request)
     if not user:
         return {"authenticated": False, "user": None}
 
-    csrf_token = request.cookies.get(CSRF_COOKIE_NAME) or generate_csrf_token()
+    csrf_token = request.cookies.get(CSRF_COOKIE_NAME)
+    if not csrf_token:
+        # Re-issue the CSRF cookie so the double-submit check can pass.
+        csrf_token = generate_csrf_token()
+        is_prod = settings.ENV.lower() == "production"
+        response.set_cookie(key=CSRF_COOKIE_NAME, value=csrf_token, httponly=False,
+                            samesite="lax", secure=is_prod, max_age=24 * 3600)
     return {
         "authenticated": True,
         "user": {

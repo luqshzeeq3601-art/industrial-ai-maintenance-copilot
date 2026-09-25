@@ -47,7 +47,8 @@ def test_technician_forbidden_from_approving():
     tech_login = client.post("/api/v1/auth/login", json={"username": "tech1", "password": "TechPass123!"})
     cookies = tech_login.cookies
 
-    resp = client.post("/api/v1/actions/ACT-TEST-123/approve", cookies=cookies)
+    resp = client.post("/api/v1/actions/ACT-TEST-123/approve", cookies=cookies,
+                       headers={"X-CSRF-Token": tech_login.json()["csrf_token"]})
     assert resp.status_code == 403
     assert "forbidden" in resp.json()["detail"].lower()
 
@@ -73,6 +74,7 @@ def test_human_in_the_loop_approval_flow():
     # 3. Supervisor logs in
     sup_login = client.post("/api/v1/auth/login", json={"username": "supervisor1", "password": "SupervisorPass123!"})
     sup_cookies = sup_login.cookies
+    sup_csrf = {"X-CSRF-Token": sup_login.json()["csrf_token"]}
 
     # 4. Supervisor views pending actions
     pending_resp = client.get("/api/v1/actions/pending", cookies=sup_cookies)
@@ -81,7 +83,7 @@ def test_human_in_the_loop_approval_flow():
     assert any(a["action_id"] == action_id for a in p_actions)
 
     # 5. Supervisor approves action
-    approve_resp = client.post(f"/api/v1/actions/{action_id}/approve", cookies=sup_cookies)
+    approve_resp = client.post(f"/api/v1/actions/{action_id}/approve", cookies=sup_cookies, headers=sup_csrf)
     assert approve_resp.status_code == 200
     assert approve_resp.json()["status"] == "approved"
     wo_id = approve_resp.json()["action_result"]["work_order_id"]
@@ -93,7 +95,7 @@ def test_human_in_the_loop_approval_flow():
     assert wo_record["approved_by"] == "supervisor1"
 
     # 7. Replay attack: attempting to approve again fails
-    replay_resp = client.post(f"/api/v1/actions/{action_id}/approve", cookies=sup_cookies)
+    replay_resp = client.post(f"/api/v1/actions/{action_id}/approve", cookies=sup_cookies, headers=sup_csrf)
     assert replay_resp.status_code == 400
 
 def test_sqlite_checkpoint_persistence_across_app_recreation():
@@ -139,6 +141,7 @@ def test_requester_cannot_approve_own_action():
     client.cookies.clear()
     sup_login = client.post("/api/v1/auth/login", json={"username": "supervisor1", "password": "SupervisorPass123!"})
     sup_cookies = sup_login.cookies
+    sup_csrf = {"X-CSRF-Token": sup_login.json()["csrf_token"]}
     session_id = f"test-self-approve-{uuid.uuid4().hex[:6]}"
     chat_resp = client.post(
         "/api/chat",
@@ -148,9 +151,17 @@ def test_requester_cannot_approve_own_action():
     assert chat_resp.json()["status"] == "approval_required"
     action_id = chat_resp.json()["pending_action"]["action_id"]
 
-    approve_resp = client.post(f"/api/v1/actions/{action_id}/approve", cookies=sup_cookies)
+    approve_resp = client.post(f"/api/v1/actions/{action_id}/approve", cookies=sup_cookies, headers=sup_csrf)
     assert approve_resp.status_code == 403
     assert "another supervisor" in approve_resp.json()["detail"].lower()
 
-    reject_resp = client.post(f"/api/v1/actions/{action_id}/reject", json={"reason": "self"}, cookies=sup_cookies)
+    reject_resp = client.post(f"/api/v1/actions/{action_id}/reject", json={"reason": "self"}, cookies=sup_cookies, headers=sup_csrf)
     assert reject_resp.status_code == 403
+
+
+def test_approval_requires_csrf_header():
+    client.cookies.clear()
+    sup_login = client.post("/api/v1/auth/login", json={"username": "supervisor1", "password": "SupervisorPass123!"})
+    resp = client.post("/api/v1/actions/ACT-TEST-123/approve", cookies=sup_login.cookies)
+    assert resp.status_code == 403
+    assert "csrf" in resp.json()["detail"].lower()

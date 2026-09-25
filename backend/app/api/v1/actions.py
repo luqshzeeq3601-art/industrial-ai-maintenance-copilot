@@ -4,7 +4,7 @@ from typing import Optional, List, Dict, Any
 from fastapi import APIRouter, HTTPException, Depends, status
 from pydantic import BaseModel, Field
 from langgraph.types import Command
-from backend.app.auth.security import get_current_user, require_roles
+from backend.app.auth.security import get_current_user, require_roles, verify_csrf
 from backend.app.database.user_audit_telemetry_repository import AuditRepository
 from backend.app.agents.graph import get_graph
 
@@ -40,7 +40,7 @@ def list_pending_actions(
         })
     return {"count": len(pending), "pending_actions": pending}
 
-@router.post("/{action_id}/approve")
+@router.post("/{action_id}/approve", dependencies=[Depends(verify_csrf)])
 def approve_action(
     action_id: str,
     current_user: Dict[str, Any] = Depends(require_roles(["supervisor", "admin"]))
@@ -64,7 +64,7 @@ def approve_action(
     return {"status": "approved", "action_id": action_id,
             "approver": current_user["username"], "action_result": final_state.get("action_result")}
 
-@router.post("/{action_id}/reject")
+@router.post("/{action_id}/reject", dependencies=[Depends(verify_csrf)])
 def reject_action(
     action_id: str,
     payload: RejectPayload,

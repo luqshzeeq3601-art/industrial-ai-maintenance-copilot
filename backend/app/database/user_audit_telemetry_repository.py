@@ -25,7 +25,7 @@ class UserRepository(BaseRepository):
         try:
             cur = conn.cursor()
             cur.execute(
-                "SELECT user_id, username, password_hash, full_name, role, created_at FROM users WHERE user_id = ?",
+                "SELECT user_id, username, password_hash, full_name, role, created_at, email, department, plant FROM users WHERE user_id = ?",
                 (user_id.strip(),)
             )
             row = cur.fetchone()
@@ -45,6 +45,21 @@ class UserRepository(BaseRepository):
                     (user_id, username.strip(), password_hash, full_name.strip(), role.strip().lower(), now)
                 )
                 return {"user_id": user_id, "username": username, "full_name": full_name, "role": role}
+        finally:
+            self._close_if_owned(conn)
+
+    def update_profile(self, user_id: str, fields: Dict[str, Any]) -> bool:
+        """Update profile columns. Only whitelisted columns are written."""
+        allowed = {k: v for k, v in fields.items() if k in ("full_name", "email", "department", "plant", "role")}
+        if not allowed:
+            return False
+        conn = self._get_conn()
+        try:
+            with conn:
+                cur = conn.cursor()
+                assignments = ", ".join(f"{k} = ?" for k in allowed)
+                cur.execute(f"UPDATE users SET {assignments} WHERE user_id = ?", [*allowed.values(), user_id])
+                return cur.rowcount > 0
         finally:
             self._close_if_owned(conn)
 

@@ -80,6 +80,22 @@ def get_current_user(request: Request) -> Dict[str, Any]:
         )
     return user
 
+def verify_csrf(request: Request) -> None:
+    """Double-submit CSRF check for cookie-authenticated mutations.
+
+    Requests authenticated with a Bearer header are not cookie-driven, so they
+    cannot be forged cross-site and skip the check.
+    """
+    if not request.cookies.get(AUTH_COOKIE_NAME):
+        return
+    cookie = request.cookies.get(CSRF_COOKIE_NAME)
+    header = request.headers.get(CSRF_HEADER_NAME)
+    if not cookie or not header or not secrets.compare_digest(cookie, header):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Missing or invalid CSRF token. Reload the page and try again."
+        )
+
 def require_roles(allowed_roles: List[str]):
     """Enforce role-based access control (RBAC)."""
     def role_checker(user: Dict[str, Any] = Depends(get_current_user)) -> Dict[str, Any]:

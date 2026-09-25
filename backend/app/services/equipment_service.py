@@ -83,7 +83,8 @@ class EquipmentService:
         priority: str,
         created_by: str,
         assigned_to: Optional[str] = None,
-        status: str = "pending"
+        status: str = "pending",
+        due_date: Optional[str] = None
     ) -> Dict[str, Any]:
         eq = self.repo.get_equipment_by_id(machine_id)
         if not eq:
@@ -98,7 +99,8 @@ class EquipmentService:
             priority=priority,
             created_by=created_by,
             assigned_to=assigned_to,
-            status=status
+            status=status,
+            due_date=due_date
         )
         return wo
 

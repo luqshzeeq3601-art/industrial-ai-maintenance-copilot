@@ -188,6 +188,69 @@ INSERT OR IGNORE INTO fault_codes (code, description, category, typical_cause, r
 ('S-402', 'HEPA Filter Differential Pressure High', 'mechanical', 'HEPA filter dust loading or pre-filter saturation', 'Inspect pre-filter resistance, replace primary HEPA module', 'medium');
 """
 
+MIGRATION_V5_SQL = """
+ALTER TABLE equipment ADD COLUMN service_interval_hours INTEGER;
+ALTER TABLE equipment ADD COLUMN hours_at_last_service INTEGER;
+ALTER TABLE work_orders ADD COLUMN due_date TEXT;
+ALTER TABLE users ADD COLUMN email TEXT;
+ALTER TABLE users ADD COLUMN department TEXT;
+ALTER TABLE users ADD COLUMN plant TEXT;
+
+CREATE TABLE IF NOT EXISTS telemetry_samples (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    machine_id TEXT NOT NULL,
+    metric TEXT NOT NULL CHECK(metric IN ('spindle_speed', 'temperature', 'vibration_rms', 'motor_current')),
+    value REAL NOT NULL,
+    unit TEXT NOT NULL,
+    observed_at TEXT NOT NULL,
+    ingested_at TEXT NOT NULL,
+    FOREIGN KEY(machine_id) REFERENCES equipment(machine_id)
+);
+CREATE INDEX IF NOT EXISTS idx_samples_machine_metric_time ON telemetry_samples(machine_id, metric, observed_at);
+
+CREATE TABLE IF NOT EXISTS activity_events (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    type TEXT NOT NULL CHECK(type IN ('sop', 'settings')),
+    machine_id TEXT,
+    user_id TEXT NOT NULL,
+    description TEXT NOT NULL,
+    ref TEXT,
+    created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_activity_created ON activity_events(created_at);
+"""
+
+# Service interval by criticality: more critical assets are serviced more often.
+SERVICE_INTERVAL_BY_CRITICALITY = {"critical": 1500, "high": 2000, "medium": 3000, "low": 4000}
+# Seed estimate of run hours per calendar day since last service (two shifts).
+SEED_HOURS_PER_DAY = 16
+
+
+def backfill_service_intervals(conn: sqlite3.Connection) -> None:
+    """Estimate service fields for rows that lack them (simulated platform data only).
+
+    hours_at_last_service = operating_hours - days since last_service * SEED_HOURS_PER_DAY,
+    clamped to [0, operating_hours]. Real deployments overwrite these from the CMMS.
+    """
+    rows = conn.execute(
+        "SELECT machine_id, last_service, operating_hours, criticality FROM equipment "
+        "WHERE service_interval_hours IS NULL OR hours_at_last_service IS NULL"
+    ).fetchall()
+    today = datetime.utcnow().date()
+    for machine_id, last_service, hours, criticality in rows:
+        hours = hours or 0
+        try:
+            days = max((today - datetime.strptime(last_service[:10], "%Y-%m-%d").date()).days, 0)
+        except (TypeError, ValueError):
+            days = 0
+        at_service = min(max(hours - days * SEED_HOURS_PER_DAY, 0), hours)
+        conn.execute(
+            "UPDATE equipment SET service_interval_hours = COALESCE(service_interval_hours, ?), "
+            "hours_at_last_service = COALESCE(hours_at_last_service, ?) WHERE machine_id = ?",
+            (SERVICE_INTERVAL_BY_CRITICALITY.get(criticality or "medium", 3000), at_service, machine_id),
+        )
+
+
 def run_migrations(conn: sqlite3.Connection):
     """Run pending SQLite migrations idempotently."""
     conn.execute("PRAGMA journal_mode=WAL;")
@@ -234,8 +297,18 @@ def run_migrations(conn: sqlite3.Connection):
             )
             logger.info("Migration v4 applied successfully.")
 
+        if 5 not in applied:
+            logger.info("Applying migration v5 (service intervals, WO due dates, user profile, telemetry samples, activity events)...")
+            conn.executescript(MIGRATION_V5_SQL)
+            conn.execute(
+                "INSERT INTO schema_migrations (version, applied_at, description) VALUES (?, ?, ?)",
+                (5, datetime.utcnow().isoformat(), "Service intervals, work-order due dates, user profile fields, telemetry samples, activity events")
+            )
+            logger.info("Migration v5 applied successfully.")
+
         # Always run idempotent seed check to guarantee tables are seeded
         seed_initial_simulated_platform(conn)
+        backfill_service_intervals(conn)
 
 def seed_initial_simulated_platform(conn: sqlite3.Connection):
     """Seed sample alarms, work orders, inspections, and default users without touching existing data."""

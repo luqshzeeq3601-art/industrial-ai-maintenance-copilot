@@ -1,5 +1,6 @@
 """Telemetry Simulator supporting REST (with HMAC) and MQTT (QoS 1) for Industrial & Semiconductor scenarios."""
 import argparse
+import random
 import hashlib
 import hmac
 import json
@@ -7,7 +8,7 @@ import os
 import sys
 import time
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 import requests
 
 SCENARIOS = {
@@ -114,6 +115,33 @@ def send_mqtt_event(broker_host: str, broker_port: int, topic: str, event_data: 
     client.disconnect()
     return {"published": True, "topic": topic, "event_id": event_data.get("event_id")}
 
+# Continuous sensor baselines for --samples mode: (mean, random-walk step, floor, ceiling).
+SAMPLE_BASELINES = {
+    "spindle_speed": (1250.0, 25.0, 0.0, 12000.0),
+    "temperature": (32.0, 0.4, 15.0, 95.0),
+    "vibration_rms": (2.2, 0.08, 0.1, 12.0),
+    "motor_current": (18.0, 0.5, 0.0, 60.0),
+}
+
+
+def simulate_samples(url: str, secret: str, machine_ids: list, hours: int, step_minutes: int, seed: int) -> None:
+    """Backfill a simulated random-walk series per metric over the last `hours` and POST it in batches."""
+    rng = random.Random(seed)
+    end = datetime.now(timezone.utc)
+    steps = int(hours * 60 / step_minutes)
+    for machine_id in machine_ids:
+        samples = []
+        for metric, (mean, step, lo, hi) in SAMPLE_BASELINES.items():
+            value = mean
+            for i in range(steps + 1):
+                value = min(max(value + rng.uniform(-step, step) + (mean - value) * 0.05, lo), hi)
+                observed = end - timedelta(minutes=(steps - i) * step_minutes)
+                samples.append({"metric": metric, "value": round(value, 2), "observed_at": observed.isoformat()})
+        for start in range(0, len(samples), 500):
+            res = send_rest_event(url, secret, {"machine_id": machine_id, "samples": samples[start:start + 500]})
+            print(f"[SAMPLES] {machine_id} batch {start // 500 + 1} -> Status {res['status_code']}: {res['body']}")
+
+
 def main():
     parser = argparse.ArgumentParser(description="Simulate Industrial & Semiconductor Telemetry Events")
     parser.add_argument("--scenario", choices=list(SCENARIOS.keys()) + ["all"], default="all")
@@ -124,7 +152,20 @@ def main():
     parser.add_argument("--broker-port", type=int, default=1883)
     parser.add_argument("--repeat", type=int, default=1)
     parser.add_argument("--interval", type=float, default=1.0)
+    parser.add_argument("--samples", action="store_true",
+                        help="Backfill simulated continuous sensor samples instead of sending fault events")
+    parser.add_argument("--samples-url", default="http://localhost:8000/api/v1/telemetry/samples")
+    parser.add_argument("--machines", default="EQ-1000,EQ-1001,EQ-1002,EQ-1003,EQ-1004")
+    parser.add_argument("--hours", type=int, default=24)
+    parser.add_argument("--step-minutes", type=int, default=10)
+    parser.add_argument("--seed", type=int, default=7)
     args = parser.parse_args()
+
+    if args.samples:
+        machine_ids = [m.strip().upper() for m in args.machines.split(",") if m.strip()]
+        print(f"[*] Backfilling simulated samples: machines={machine_ids}, hours={args.hours}, step={args.step_minutes}m")
+        simulate_samples(args.samples_url, args.secret, machine_ids, args.hours, args.step_minutes, args.seed)
+        return
 
     target_scenarios = list(SCENARIOS.keys()) if args.scenario == "all" else [args.scenario]
     print(f"[*] Starting telemetry simulation: mode={args.mode}, scenarios={target_scenarios}")

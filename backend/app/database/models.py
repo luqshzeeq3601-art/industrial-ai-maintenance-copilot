@@ -89,6 +89,8 @@ class EquipmentModel(Base):
     status = Column(String(50), nullable=False, default="operational")
     operating_hours = Column(Integer, default=0)
     criticality = Column(String(50), nullable=False, default="medium")
+    service_interval_hours = Column(Integer, nullable=True)
+    hours_at_last_service = Column(Integer, nullable=True)
 
 class FaultCodeModel(Base):
     __tablename__ = "fault_codes"
@@ -141,6 +143,7 @@ class WorkOrderModel(Base):
     approved_at = Column(String(50), nullable=True)
     rejection_reason = Column(Text, nullable=True)
     completed_at = Column(String(50), nullable=True)
+    due_date = Column(String(50), nullable=True)
 
 class ScheduledInspectionModel(Base):
     __tablename__ = "scheduled_inspections"
@@ -162,6 +165,9 @@ class UserModel(Base):
     full_name = Column(String(150), nullable=False)
     role = Column(String(50), nullable=False)
     created_at = Column(String(50), nullable=False)
+    email = Column(String(200), nullable=True)
+    department = Column(String(100), nullable=True)
+    plant = Column(String(100), nullable=True)
 
 class ActionAuditModel(Base):
     __tablename__ = "action_audit"
@@ -190,6 +196,26 @@ class TelemetryEventModel(Base):
     transport = Column(String(50), nullable=False, default="rest")
     ingested_at = Column(String(50), nullable=False)
     created_alarm_id = Column(String(100), ForeignKey("alarms.alarm_id"), nullable=True)
+
+class TelemetrySampleModel(Base):
+    __tablename__ = "telemetry_samples"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    machine_id = Column(String(50), ForeignKey("equipment.machine_id"), nullable=False)
+    metric = Column(String(50), nullable=False)
+    value = Column(Float, nullable=False)
+    unit = Column(String(20), nullable=False)
+    observed_at = Column(String(50), nullable=False)
+    ingested_at = Column(String(50), nullable=False)
+
+class ActivityEventModel(Base):
+    __tablename__ = "activity_events"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    type = Column(String(50), nullable=False)
+    machine_id = Column(String(50), nullable=True)
+    user_id = Column(String(100), nullable=False)
+    description = Column(Text, nullable=False)
+    ref = Column(String(200), nullable=True)
+    created_at = Column(String(50), nullable=False)
 
 _engine = None
 _session_factory = None

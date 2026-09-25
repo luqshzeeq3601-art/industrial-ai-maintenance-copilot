@@ -4,9 +4,10 @@ import hmac
 import logging
 import time
 from datetime import datetime
-from typing import Optional, Dict, Any, List
+from typing import Optional, Dict, Any, List, Literal
 from fastapi import APIRouter, HTTPException, Request, Depends, Query, status
 from pydantic import BaseModel, Field
+from backend.app.database.activity_repository import SampleRepository, SAMPLE_METRICS
 from backend.app.config import settings
 from backend.app.services.telemetry_service import TelemetryService
 
@@ -14,6 +15,9 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/telemetry", tags=["Telemetry v1"])
 service = TelemetryService()
+samples = SampleRepository()
+
+SampleMetric = Literal["spindle_speed", "temperature", "vibration_rms", "motor_current"]
 
 class TelemetryEventPayload(BaseModel):
     event_id: Optional[str] = Field(default=None, description="Unique UUID for idempotency")
@@ -92,3 +96,37 @@ def list_telemetry_events(
 ):
     events = service.telemetry.get_telemetry_events(machine_id=machine_id, limit=limit)
     return {"count": len(events), "events": events}
+
+
+class TelemetrySample(BaseModel):
+    metric: SampleMetric
+    value: float
+    observed_at: datetime
+
+
+class TelemetrySampleBatch(BaseModel):
+    machine_id: str = Field(..., min_length=3, max_length=50)
+    samples: List[TelemetrySample] = Field(..., min_length=1, max_length=500)
+
+
+@router.post("/samples", dependencies=[Depends(verify_hmac_signature)])
+def ingest_telemetry_samples(batch: TelemetrySampleBatch):
+    """Ingest continuous sensor readings (spindle speed, temperature, vibration, motor current)."""
+    if not service.repo.get_equipment_by_id(batch.machine_id):
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Equipment '{batch.machine_id}' not found.")
+    count = samples.insert_samples(batch.machine_id, [
+        {"metric": s.metric, "value": s.value, "observed_at": s.observed_at.isoformat()} for s in batch.samples
+    ])
+    return {"machine_id": batch.machine_id.upper(), "ingested": count}
+
+
+@router.get("/samples")
+def list_telemetry_samples(
+    machine_id: str = Query(..., description="Machine identifier"),
+    metric: Optional[SampleMetric] = None,
+    since: Optional[datetime] = Query(default=None, alias="from", description="ISO8601 window start"),
+    limit: int = Query(default=2000, ge=1, le=5000),
+):
+    """Continuous sensor readings for one machine, oldest first, with each metric's unit."""
+    rows = samples.get_samples(machine_id, metric=metric, since=since.isoformat() if since else None, limit=limit)
+    return {"machine_id": machine_id.upper(), "count": len(rows), "units": SAMPLE_METRICS, "samples": rows}
