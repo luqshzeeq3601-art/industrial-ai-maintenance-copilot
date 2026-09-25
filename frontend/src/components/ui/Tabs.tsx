@@ -37,7 +37,7 @@ export function Tabs<T extends string>({ label, items, value, onChange, idBase, 
       role="tablist"
       aria-label={label}
       className={cn(
-        "flex max-w-full overflow-x-auto custom-scrollbar",
+        "flex max-w-full overflow-x-auto overflow-y-hidden custom-scrollbar",
         variant === "underline" ? "gap-6 border-b border-line" : "gap-2",
         className
       )}

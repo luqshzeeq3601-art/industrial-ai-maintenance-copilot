@@ -3,7 +3,7 @@ import { Link, type LinkProps } from "react-router";
 import { Loader2, type LucideIcon } from "lucide-react";
 import { cn } from "../../lib/cn";
 
-type Variant = "primary" | "secondary" | "ghost" | "danger" | "soft";
+type Variant = "primary" | "secondary" | "ghost" | "danger" | "danger-outline" | "soft";
 type Size = "sm" | "md";
 
 const BASE =
@@ -16,6 +16,7 @@ const VARIANTS: Record<Variant, string> = {
   secondary: "bg-panel text-ink border border-line-strong hover:bg-sunken active:bg-wash",
   ghost: "text-body hover:text-ink hover:bg-wash active:bg-line",
   danger: "bg-danger-solid text-white hover:bg-danger-solid-hover",
+  "danger-outline": "bg-panel text-danger border border-danger-line hover:bg-danger-bg",
   soft: "bg-accent-bg text-accent-ink hover:bg-accent-line/50"
 };
 

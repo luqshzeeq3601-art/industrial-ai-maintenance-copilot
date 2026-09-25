@@ -251,6 +251,15 @@ def backfill_service_intervals(conn: sqlite3.Connection) -> None:
         )
 
 
+def normalize_epoch_timestamps(conn: sqlite3.Connection) -> None:
+    """Rewrite epoch-second timestamps (stored by older telemetry ingestion) as UTC ISO text, idempotently."""
+    for table, column in (("alarms", "triggered_at"), ("telemetry_events", "observed_at")):
+        conn.execute(
+            f"UPDATE {table} SET {column} = strftime('%Y-%m-%dT%H:%M:%S', CAST({column} AS REAL), 'unixepoch') "
+            f"WHERE {column} GLOB '[0-9]*' AND {column} NOT GLOB '*-*'"
+        )
+
+
 def run_migrations(conn: sqlite3.Connection):
     """Run pending SQLite migrations idempotently."""
     conn.execute("PRAGMA journal_mode=WAL;")
@@ -309,6 +318,7 @@ def run_migrations(conn: sqlite3.Connection):
         # Always run idempotent seed check to guarantee tables are seeded
         seed_initial_simulated_platform(conn)
         backfill_service_intervals(conn)
+        normalize_epoch_timestamps(conn)
 
 def seed_initial_simulated_platform(conn: sqlite3.Connection):
     """Seed sample alarms, work orders, inspections, and default users without touching existing data."""

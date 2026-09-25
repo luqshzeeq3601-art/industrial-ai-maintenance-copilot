@@ -30,12 +30,12 @@ export function SopTable({ rows, isLoading, error, onRetry, onOpen, onAsk, empty
         </span>
       )
     },
-    { key: "title", header: "Title", cell: (s) => <span className="block min-w-[220px] text-small font-medium text-ink">{s.title}</span> },
+    { key: "title", header: "Title", cell: (s) => <span className="block min-w-[180px] text-small font-medium text-ink">{s.title}</span> },
     { key: "category", header: "Category", cell: (s) => <span className="text-body">{humanize(s.category)}</span> },
     {
       key: "asset",
       header: "Asset",
-      cell: (s) => <span className="block max-w-[220px] truncate" title={s.assets.join(", ")}>{s.assets.length ? s.assets.join(", ") : "All"}</span>
+      cell: (s) => <span className="block max-w-[170px] truncate" title={s.assets.join(", ")}>{s.assets.length ? s.assets.join(", ") : "All"}</span>
     },
     { key: "updated", header: "Last updated", cell: (s) => <span className="font-data whitespace-nowrap">{formatDate(s.updated)}</span> },
     { key: "status", header: "Status", cell: (s) => <StatusLabel meta={SOP_STATUS[s.status]} /> },

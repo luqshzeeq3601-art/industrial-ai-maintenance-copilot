@@ -82,7 +82,7 @@ export default function DiagnosticsPage() {
         }
       />
 
-      <div className="grid gap-5 lg:grid-cols-[300px_minmax(0,1fr)] lg:items-start">
+      <div className="grid gap-5 lg:grid-cols-[260px_minmax(0,1fr)] wide:grid-cols-[300px_minmax(0,1fr)] lg:items-start">
         <AssetRail equipment={equipment.data?.equipment} isLoading={equipment.isLoading} error={equipment.error} onRetry={() => void equipment.refetch()} tab={current} />
 
         <div className="min-w-0 space-y-5">

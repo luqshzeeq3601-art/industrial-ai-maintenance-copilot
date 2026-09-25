@@ -80,7 +80,7 @@ export function DataTable<T>({
                     scope="col"
                     aria-sort={col.sortKey ? (active ? (sort!.order === "asc" ? "ascending" : "descending") : "none") : undefined}
                     className={cn(
-                      "h-11 px-4 border-b border-line text-label font-semibold text-body whitespace-nowrap",
+                      "h-11 px-3 first:pl-4 last:pr-4 border-b border-line text-label font-semibold text-body whitespace-nowrap",
                       col.align === "right" && "text-right",
                       col.className
                     )}
@@ -127,7 +127,7 @@ export function DataTable<T>({
                       <td
                         key={col.key}
                         className={cn(
-                          "h-12 px-4 py-2 border-b border-line text-meta text-ink align-middle",
+                          "h-12 px-3 first:pl-4 last:pr-4 py-2 border-b border-line text-meta text-ink align-middle",
                           col.align === "right" && "text-right",
                           col.className
                         )}

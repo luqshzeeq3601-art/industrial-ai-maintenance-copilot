@@ -113,16 +113,15 @@ function ProfileSection({ isAdmin }: { isAdmin: boolean }) {
   if (!profile.data) return <Skeleton className="h-80" />;
   return (
     <div className="space-y-10">
-      <ProfileForm key={profile.dataUpdatedAt} profile={profile.data} canEditRole={isAdmin} />
+      <ProfileForm key={profile.data.user_id} profile={profile.data} canEditRole={isAdmin} />
       <section aria-labelledby="session-heading" className="pt-6 border-t border-line">
         <h3 id="session-heading" className="text-title font-semibold">
           Session
         </h3>
         <p className="mt-1 mb-3 text-meta text-body">Sign out of Maintenance Copilot on this device.</p>
         <Button
-          variant="secondary"
+          variant="danger-outline"
           icon={LogOut}
-          className="text-danger border-danger-line hover:bg-danger-bg"
           onClick={async () => {
             await signOut(API_BASE);
             session.signedOut();

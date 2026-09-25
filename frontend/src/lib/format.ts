@@ -9,41 +9,31 @@ export function parseApiTime(value: string | null | undefined): Date | null {
   return Number.isNaN(date.getTime()) ? null : date;
 }
 
-const dateFmt = new Intl.DateTimeFormat(LOCALE, { day: "2-digit", month: "short", year: "numeric" });
-const dateTimeFmt = new Intl.DateTimeFormat(LOCALE, {
-  day: "2-digit",
-  month: "short",
-  year: "numeric",
-  hour: "2-digit",
-  minute: "2-digit",
-  hour12: false
-});
-const shortDateTimeFmt = new Intl.DateTimeFormat(LOCALE, {
-  day: "2-digit",
-  month: "short",
-  hour: "2-digit",
-  minute: "2-digit",
-  hour12: false
-});
 const timeFmt = new Intl.DateTimeFormat(LOCALE, { hour: "2-digit", minute: "2-digit", hour12: false });
 const numberFmt = new Intl.NumberFormat(LOCALE);
+
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const pad = (n: number) => String(n).padStart(2, "0");
+// Built by hand: Intl's en-GB short month is "Sept", which breaks fixed-width columns.
+const day = (d: Date) => `${pad(d.getDate())} ${MONTHS[d.getMonth()]}`;
+const clock = (d: Date) => `${pad(d.getHours())}:${pad(d.getMinutes())}`;
 
 /** "10 Sep 2026" */
 export const formatDate = (value: string | null | undefined) => {
   const d = parseApiTime(value);
-  return d ? dateFmt.format(d) : "—";
+  return d ? `${day(d)} ${d.getFullYear()}` : "—";
 };
 
 /** "10 Sep 2026, 14:32" */
 export const formatDateTime = (value: string | null | undefined) => {
   const d = parseApiTime(value);
-  return d ? dateTimeFmt.format(d) : "—";
+  return d ? `${day(d)} ${d.getFullYear()}, ${clock(d)}` : "—";
 };
 
-/** "10 Sep, 14:32" for dense lists */
+/** "10 Sep 14:32" for dense lists */
 export const formatShortDateTime = (value: string | null | undefined) => {
   const d = parseApiTime(value);
-  return d ? shortDateTimeFmt.format(d) : "—";
+  return d ? `${day(d)} ${clock(d)}` : "—";
 };
 
 export const formatTime = (value: string | Date) => {

@@ -26,11 +26,11 @@ export function NextService({ asset }: { asset: Equipment }) {
   if (left == null) return <span className="text-body">—</span>;
   return (
     <span className="leading-tight">
-      <span className={cn("block font-data font-semibold", left < 0 ? "text-danger" : "text-ink")}>
+      <span className={cn("block whitespace-nowrap font-data font-semibold", left < 0 ? "text-danger" : "text-ink")}>
         {left < 0 ? `${formatHours(-left)} over` : formatHours(left)}
       </span>
       {asset.service_interval_hours != null && (
-        <span className="block text-label text-body">Every {formatHours(asset.service_interval_hours)}</span>
+        <span className="block whitespace-nowrap text-label text-body">Every {formatHours(asset.service_interval_hours)}</span>
       )}
     </span>
   );
@@ -45,8 +45,8 @@ export function AssetTable({ rows, isLoading, error, onRetry, sort, onSortChange
       header: "Asset",
       sortKey: "name",
       cell: (a) => (
-        <span className="flex items-center gap-3 min-w-[200px]">
-          <EquipmentSchematicIcon machineId={a.machine_id} name={a.name} type={a.type} size="sm" className="hidden lg:flex" />
+        <span className="flex items-center gap-3 min-w-[160px] max-w-[196px]">
+          <EquipmentSchematicIcon machineId={a.machine_id} name={a.name} type={a.type} size="sm" className="hidden min-[1600px]:flex" />
           <span className="min-w-0 leading-tight">
             <Link to={`/assets/${a.machine_id}`} onClick={(e) => e.stopPropagation()} className="block text-small font-semibold text-ink hover:underline underline-offset-2">
               {a.name}
@@ -56,14 +56,14 @@ export function AssetTable({ rows, isLoading, error, onRetry, sort, onSortChange
         </span>
       )
     },
-    { key: "id", header: "ID", sortKey: "machine_id", cell: (a) => <span className="font-data font-medium">{a.machine_id}</span> },
+    { key: "id", header: "ID", sortKey: "machine_id", cell: (a) => <span className="font-data font-medium whitespace-nowrap">{a.machine_id}</span> },
     { key: "location", header: "Location", sortKey: "location", cell: (a) => <span className="text-ink">{a.location}</span> },
     {
       key: "hours",
       header: "Hours",
       sortKey: "operating_hours",
       align: "right",
-      cell: (a) => <span className="font-data">{formatHours(a.operating_hours)}</span>
+      cell: (a) => <span className="font-data whitespace-nowrap">{formatHours(a.operating_hours)}</span>
     },
     { key: "status", header: "Status", sortKey: "status", cell: (a) => <StatusLabel meta={assetStatus(a.status)} /> },
     { key: "next", header: "Next service", sortKey: "next_service_in_hours", cell: (a) => <NextService asset={a} /> },

@@ -31,7 +31,7 @@ export function AlarmTable({ alarms, isLoading, error, onRetry, showAsset = fals
       key: "description",
       header: "Description",
       cell: (a) => (
-        <span className="block min-w-[220px]">
+        <span className="block min-w-[180px]">
           {a.fault_description ?? "Unknown fault code"}
           {a.status === "acknowledged" && a.acknowledged_by && (
             <span className="block text-label text-body">Acknowledged by {a.acknowledged_by}</span>

@@ -144,7 +144,7 @@ function WorkOrderDetail({ id, onClose }: { id: string | undefined; onClose: () 
             </section>
           )}
           {w.status === "pending" && !canDecide && (
-            <p className="text-meta text-body">{w.created_by === user.username ? "Another supervisor or admin must approve work you created." : "A supervisor or admin approves this before work starts."}</p>
+            <p className="text-meta text-body">{isApproverRole(user.role) && w.created_by === user.username ? "Another supervisor or admin must approve work you created." : "A supervisor or admin approves this before work starts."}</p>
           )}
 
           {next.length > 0 && (

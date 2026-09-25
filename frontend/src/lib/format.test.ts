@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { formatHours, humanize, initials, isOverdue, isoDay, parseApiTime } from "./format";
+import { formatDate, formatDateTime, formatHours, formatShortDateTime, humanize, initials, isOverdue, isoDay, parseApiTime } from "./format";
 
 describe("parseApiTime", () => {
   it("reads the API's naive timestamps as UTC", () => {
@@ -38,5 +38,17 @@ describe("formatting", () => {
   it("builds initials and sentence-case labels", () => {
     expect(initials("David  Chen")).toBe("DC");
     expect(humanize("work_order")).toBe("Work order");
+  });
+});
+
+describe("dates", () => {
+  it("uses three-letter months and 24-hour times", () => {
+    const local = "2026-09-10T14:32:00+00:00";
+    const d = new Date(local);
+    const hh = String(d.getHours()).padStart(2, "0");
+    const mm = String(d.getMinutes()).padStart(2, "0");
+    expect(formatDate("2026-09-10")).toBe("10 Sep 2026");
+    expect(formatShortDateTime(local)).toBe(`${String(d.getDate()).padStart(2, "0")} Sep ${hh}:${mm}`);
+    expect(formatDateTime(null)).toBe("—");
   });
 });

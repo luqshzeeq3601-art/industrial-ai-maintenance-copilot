@@ -1,7 +1,7 @@
 """Telemetry service for validating and processing industrial & semiconductor telemetry events."""
 import logging
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, Any, Optional, Union
 from backend.app.database.equipment_repository import EquipmentRepository
 from backend.app.database.alarm_repository import AlarmRepository
@@ -83,6 +83,27 @@ def normalize_severity(severity: str) -> str:
         return "medium"
     return "low"
 
+def normalize_timestamp(value: Any) -> str:
+    """UTC ISO-8601 without offset, the format every other table uses.
+
+    Accepts epoch seconds (number or numeric string), ISO strings with or without an offset, or None (now).
+    """
+    if value is None or value == "":
+        return datetime.utcnow().isoformat()
+    try:
+        return datetime.utcfromtimestamp(float(value)).isoformat()
+    except (TypeError, ValueError):
+        pass
+    text = str(value).strip()
+    try:
+        parsed = datetime.fromisoformat(text.replace("Z", "+00:00"))
+    except ValueError:
+        return text
+    if parsed.tzinfo is not None:
+        parsed = parsed.astimezone(timezone.utc).replace(tzinfo=None)
+    return parsed.isoformat()
+
+
 class TelemetryService:
     def __init__(self, repo: Optional[Union[IndustrialRepository, EquipmentRepository]] = None,
                  alarms: Optional[AlarmRepository] = None,
@@ -98,7 +119,7 @@ class TelemetryService:
         metric = str(event_data.get("metric") or event_data.get("metric_name") or event_data.get("event_type") or "").strip().lower()
         value = float(event_data.get("value", 0.0))
         unit = str(event_data.get("unit", "")).strip()
-        timestamp = str(event_data.get("timestamp") or datetime.utcnow().isoformat())
+        timestamp = normalize_timestamp(event_data.get("timestamp"))
         raw_payload = event_data.get("raw_payload")
         if isinstance(raw_payload, dict):
             import json

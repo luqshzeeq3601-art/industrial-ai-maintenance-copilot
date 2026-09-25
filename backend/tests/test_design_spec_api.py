@@ -285,3 +285,24 @@ def test_migration_v5_is_idempotent(tmp_path):
     assert {"service_interval_hours", "hours_at_last_service"} <= cols
     assert conn.execute("SELECT count(*) FROM equipment WHERE service_interval_hours IS NULL").fetchone()[0] == 0
     conn.close()
+
+
+# --- Timestamps ---
+
+def test_telemetry_timestamps_are_normalised_to_utc_iso():
+    from backend.app.services.telemetry_service import normalize_timestamp
+    assert normalize_timestamp(1790350596) == "2026-09-25T15:36:36"
+    assert normalize_timestamp("1790350596.5") == "2026-09-25T15:36:36.500000"
+    assert normalize_timestamp("2026-09-25T23:36:36+08:00") == "2026-09-25T15:36:36"
+    assert normalize_timestamp("2026-09-25T15:36:36Z") == "2026-09-25T15:36:36"
+
+
+def test_epoch_alarm_rows_are_repaired_on_migration(tmp_path):
+    conn = sqlite3.connect(tmp_path / "epoch.db")
+    run_migrations(conn)
+    conn.execute("INSERT INTO alarms (alarm_id, machine_id, code, severity, status, triggered_at) "
+                 "VALUES ('ALM-EPOCH', 'EQ-1000', 'E-105', 'critical', 'active', '1790350596')")
+    conn.commit()
+    run_migrations(conn)
+    assert conn.execute("SELECT triggered_at FROM alarms WHERE alarm_id = 'ALM-EPOCH'").fetchone()[0] == "2026-09-25T15:36:36"
+    conn.close()
