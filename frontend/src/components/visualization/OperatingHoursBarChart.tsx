@@ -7,6 +7,8 @@ export interface EquipmentData {
   name: string;
   type: string;
   location: string;
+  install_date?: string | null;
+  last_service?: string | null;
   status: string;
   operating_hours: number;
   criticality: string;

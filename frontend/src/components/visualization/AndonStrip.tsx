@@ -12,6 +12,7 @@ interface AndonStripProps {
   onSelect: (machineId: string) => void;
   filter: AndonFilter;
   onFilterChange: (filter: AndonFilter) => void;
+  onViewAll?: () => void;
 }
 
 const FILTERS: { id: AndonFilter; label: string; dot?: string; activeClass: string }[] = [
@@ -59,7 +60,7 @@ const CARD_STATUS_STYLE: Record<
 };
 
 /** Shop-floor Andon board: equipment grid with authentic CAD schematic thumbnails and status telemetry. */
-export function AndonStrip({ equipment, selectedId, onSelect, filter, onFilterChange }: AndonStripProps) {
+export function AndonStrip({ equipment, selectedId, onSelect, filter, onFilterChange, onViewAll }: AndonStripProps) {
   const [query, setQuery] = useState("");
   const count = (id: AndonFilter) =>
     id === "all" ? equipment.length : equipment.filter((e) => e.status.toLowerCase() === id).length;
@@ -74,11 +75,12 @@ export function AndonStrip({ equipment, selectedId, onSelect, filter, onFilterCh
   };
 
   const q = query.trim().toLowerCase();
-  const visible = equipment.filter(
+  const matching = equipment.filter(
     (e) =>
       (filter === "all" || e.status.toLowerCase() === filter) &&
       (!q || `${e.machine_id} ${e.name} ${e.location} ${e.type}`.toLowerCase().includes(q))
   );
+  const visible = filter === "all" && !q ? matching.slice(0, 5) : matching;
 
   return (
     <section aria-labelledby="andon-heading" className="bg-panel rounded-xl border border-line-strong/70 shadow-[var(--shadow-cockpit)] p-4 sm:p-5">
@@ -86,6 +88,7 @@ export function AndonStrip({ equipment, selectedId, onSelect, filter, onFilterCh
         <div className="mr-auto flex items-baseline gap-2.5">
           <h2 id="andon-heading" className="text-section font-semibold text-ink tracking-tight">Andon board</h2>
           <span className="text-small text-muted tabular-nums font-normal">{equipment.length} assets</span>
+          {onViewAll && <button type="button" onClick={onViewAll} className="ml-3 min-h-10 text-small font-semibold text-accent hover:underline">View all assets</button>}
         </div>
 
         <div role="radiogroup" aria-label="Show assets by status" className="flex flex-wrap gap-1.5 sm:gap-2">
@@ -154,7 +157,7 @@ export function AndonStrip({ equipment, selectedId, onSelect, filter, onFilterCh
           </button>
         </div>
       ) : (
-        <ul className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-3">
+        <ul className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5 gap-3">
           {visible.map((eq) => {
             const statusKey = eq.status.toLowerCase();
             const badge = CARD_STATUS_STYLE[statusKey] ?? CARD_STATUS_STYLE.operational;

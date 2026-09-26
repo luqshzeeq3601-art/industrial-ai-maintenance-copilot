@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type KeyboardEvent, type ReactNode } from "react";
-import { Activity, ArrowDownRight, ArrowUpRight, CircleAlert, Clock, Hourglass, RefreshCw } from "lucide-react";
+import { Activity, ArrowDownRight, ArrowUpRight, CircleAlert, ClipboardList, Clock, Hourglass, RefreshCw } from "lucide-react";
 import { FleetHealthDonut } from "./FleetHealthDonut";
 import { OperatingHoursBarChart, type EquipmentData } from "./OperatingHoursBarChart";
 import { FaultDistributionChart } from "./FaultDistributionChart";
@@ -7,6 +7,7 @@ import { AndonStrip, type AndonFilter } from "./AndonStrip";
 import { DemoBadge } from "../shell/DemoDataBanner";
 import { DEMO_DATA } from "../../config";
 import { DEMO_FAULTS } from "../../defaults";
+import { useCollection, type WorkOrder } from "../views/operationalData";
 
 interface FleetHealthData {
   total_units: number;
@@ -33,6 +34,7 @@ interface AnalyticsDashboardViewProps {
   demo?: boolean;
   selectedMachineId?: string;
   onSelectMachine: (machineId: string) => void;
+  onViewAllAssets?: () => void;
 }
 
 /** Shared card surface; matches the workspace panels. */
@@ -155,37 +157,6 @@ function UnitGrid({ statuses, label }: { statuses: string[]; label: string }) {
 }
 
 /** Stepped vertical bar chart graphic (8 ascending blue bars) */
-function SteppedBlueBars() {
-  const heights = [22, 32, 45, 56, 68, 78, 88, 100];
-  return (
-    <div className="flex items-end gap-1 h-12 px-1" aria-hidden="true">
-      {heights.map((h, i) => (
-        <span
-          key={i}
-          className="w-1.5 bg-blue-600 rounded-xs transition-all"
-          style={{ height: `${h}%` }}
-        />
-      ))}
-    </div>
-  );
-}
-
-/** Stepped vertical bar chart graphic (7 ascending amber bars) */
-function SteppedAmberBars() {
-  const heights = [25, 38, 52, 65, 76, 88, 100];
-  return (
-    <div className="flex items-end gap-1 h-12 px-1" aria-hidden="true">
-      {heights.map((h, i) => (
-        <span
-          key={i}
-          className="w-1.5 bg-amber-500 rounded-xs transition-all"
-          style={{ height: `${h}%` }}
-        />
-      ))}
-    </div>
-  );
-}
-
 
 function KpiSkeleton() {
   return (
@@ -234,7 +205,8 @@ function PeriodPicker({ value, onChange }: { value: string; onChange: (id: strin
   );
 }
 
-export function AnalyticsDashboardView({ apiBase, equipmentList, demo = false, selectedMachineId, onSelectMachine }: AnalyticsDashboardViewProps) {
+export function AnalyticsDashboardView({ apiBase, equipmentList, demo = false, selectedMachineId, onSelectMachine, onViewAllAssets }: AnalyticsDashboardViewProps) {
+  const workOrders = useCollection<WorkOrder>("/api/v1/work-orders", "work_orders");
   const [periodId, setPeriodId] = useState("30");
   const [refreshKey, setRefreshKey] = useState(0);
   const [response, setResponse] = useState<Response>({ key: "", data: null, error: false });
@@ -286,9 +258,10 @@ export function AnalyticsDashboardView({ apiBase, equipmentList, demo = false, s
   const running = health?.status_distribution.operational ?? 0;
   const runningPct = health?.total_units ? Math.round((running / health.total_units) * 100) : 0;
   const repairs = health?.repairs_logged ?? (faults?.incident_breakdown ?? []).reduce((sum, r) => sum + r.occurrences, 0);
+  const activeOrders = workOrders.items.filter((order) => ["pending", "approved", "in_progress"].includes(order.status)).length;
 
   return (
-    <div className="mx-auto w-full max-w-[1440px] px-1 sm:px-2 py-2 space-y-5">
+    <div className="mx-auto w-full max-w-[1680px] px-1 sm:px-2 py-2 space-y-5">
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="flex items-center gap-2 text-[30px] font-bold text-ink tracking-tight leading-9">
@@ -329,15 +302,16 @@ export function AnalyticsDashboardView({ apiBase, equipmentList, demo = false, s
         </div>
       )}
 
-      {/* 3 Top KPI Cards matching Image 1: Plant availability, Total operating hours, Cumulative downtime */}
+      {/* Operational values come from the fleet, analytics, and work order APIs. */}
       {!failed && (
         <div
-          className="grid grid-cols-1 md:grid-cols-3 gap-4"
+          className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4"
           role={health ? undefined : "status"}
           aria-label={health ? undefined : "Loading plant analytics"}
         >
           {!health ? (
             <>
+              <KpiSkeleton />
               <KpiSkeleton />
               <KpiSkeleton />
               <KpiSkeleton />
@@ -371,7 +345,6 @@ export function AnalyticsDashboardView({ apiBase, equipmentList, demo = false, s
                     Avg {Math.round(health.avg_operating_hours).toLocaleString()} h / unit
                   </span>
                 }
-                chart={<SteppedBlueBars />}
               />
               <KpiCard
                 label="Cumulative downtime"
@@ -388,14 +361,20 @@ export function AnalyticsDashboardView({ apiBase, equipmentList, demo = false, s
                     {periodDelta(health.total_downtime_hours, health.previous_downtime_hours, periodDays, "downtime") ?? `${repairs} repairs logged`}
                   </span>
                 }
-                chart={<SteppedAmberBars />}
+              />
+              <KpiCard
+                label="Active work orders"
+                icon={<ClipboardList className="w-4 h-4 text-blue-600" />}
+                iconBg="bg-blue-50"
+                value={workOrders.state === "ready" ? activeOrders : "—"}
+                caption={workOrders.state === "ready" ? "Pending, approved, or in progress" : workOrders.state === "loading" ? "Loading work orders" : "Work orders unavailable"}
               />
             </>
           )}
         </div>
       )}
 
-      <AndonStrip equipment={equipmentList} selectedId={selectedMachineId} onSelect={onSelectMachine} filter={andonFilter} onFilterChange={setAndonFilter} />
+      <AndonStrip equipment={equipmentList} selectedId={selectedMachineId} onSelect={onSelectMachine} filter={andonFilter} onFilterChange={setAndonFilter} onViewAll={onViewAllAssets} />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {health ? (

@@ -1,4 +1,4 @@
-/* Enterprise Operations Typography · Primary: Inter · Data/Technical: Geist Mono */
+@import url("https://fonts.googleapis.com/css2?family=Geist+Mono:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap");
 @import "tailwindcss";
 
 @theme {
@@ -31,11 +31,11 @@
   --text-hero--line-height: 48px;
 
   /* Surfaces & neutrals (slate). Components use these names, never raw hex. */
-  --color-paper: #f3f6fa;       /* app canvas behind panels (gray-blue) */
+  --color-paper: #f6f8fb;       /* app canvas behind panels (gray-blue) */
   --color-panel: #ffffff;       /* panel / card surface */
-  --color-sunken: #f7f9fc;      /* table header, row hover, inset tile */
+  --color-sunken: #f8fafc;      /* table header, row hover, inset tile */
   --color-wash: #f1f5f9;        /* user bubble, pressed, chips */
-  --color-line: #e3e8ef;        /* default border / divider */
+  --color-line: #e2e8f0;        /* default border / divider */
   --color-line-strong: #cbd5e1; /* control border */
   --color-ink: #0f172a;         /* headings, primary text (17.9:1) */
   --color-body: #334155;        /* body text (10.4:1) */

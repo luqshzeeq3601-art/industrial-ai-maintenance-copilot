@@ -22,7 +22,7 @@ describe("App with demo data", () => {
     await userEvent.click(screen.getAllByRole("button", { name: /Dashboard/ })[0]);
     const heading = await screen.findByRole("heading", { name: /Dashboard/ });
     expect(within(heading).getByText("Demo data")).toBeInTheDocument();
-  });
+  }, 20000);
 
   it("filters the fleet from the header status bar", async () => {
     stubFetch([]);

@@ -90,6 +90,7 @@ export function formatLocation(loc: string): string {
 }
 
 const dateTimeFormat = new Intl.DateTimeFormat(undefined, { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
+const dateFormat = new Intl.DateTimeFormat(undefined, { day: "numeric", month: "short", year: "numeric" });
 const relativeFormat = new Intl.RelativeTimeFormat(undefined, { numeric: "auto" });
 
 /** The API stores naive UTC ("2026-09-23 06:58:16"); zone-less values are read as UTC. */
@@ -104,6 +105,11 @@ export function parseTimestamp(value?: string | Date | null): Date | null {
 export function formatDateTime(value?: string | Date | null): string {
   const d = parseTimestamp(value);
   return d ? dateTimeFormat.format(d) : "Unknown time";
+}
+
+export function formatDate(value?: string | Date | null): string {
+  const d = parseTimestamp(value);
+  return d ? dateFormat.format(d) : "Not recorded";
 }
 
 /** "3 hours ago", "yesterday", "in 2 days". */
